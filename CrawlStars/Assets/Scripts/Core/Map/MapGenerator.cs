@@ -36,7 +36,7 @@ namespace Core.Map {
 
             Vector2 startPos = new Vector2(
                 -TileScale * (mapData.width - 1) * 0.5f,
-                -TileScale * (mapData.height - 1) * 0.5f
+                TileScale * (mapData.height - 1) * 0.5f
             );
             for (int y = 0; y < mapData.height; ++y) {
                 for (int x = 0; x < mapData.width; ++x) {
@@ -45,7 +45,7 @@ namespace Core.Map {
 
                     var tileType = mapData.map[y][x] == 1 ? Tile.TileType.Wall : Tile.TileType.Ground;
                     obj.Initialize(tileType, TileScale);
-                    obj.transform.localPosition = startPos + new Vector2(x, y) * TileScale;
+                    obj.transform.localPosition = startPos + new Vector2(x, -y) * TileScale;
                     loadedTiles.Add(obj);
                 }
             }
