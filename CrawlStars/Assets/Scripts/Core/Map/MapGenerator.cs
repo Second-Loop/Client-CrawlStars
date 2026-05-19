@@ -26,10 +26,6 @@ namespace Core.Map {
             DontDestroyOnLoad(gameObject);
         }
 
-        private void Start() {
-            Generate(MapLoader.MapType.A);
-        }
-
         public void Generate(MapLoader.MapType mapType) {
             var mapData = MapLoader.LoadMapFile(mapType);
             if (mapData == null) return;
