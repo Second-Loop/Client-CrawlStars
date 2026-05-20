@@ -1,5 +1,6 @@
 using Core.Map;
 using Core.Player;
+using Core.Simulator;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour {

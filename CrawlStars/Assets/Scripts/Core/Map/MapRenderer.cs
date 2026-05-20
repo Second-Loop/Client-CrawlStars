@@ -17,10 +17,8 @@ namespace Core.Map {
             var mapData = MapLoader.GetMapData(mapIndex);
             if (mapData == null) return;
 
-            Vector2 startPos = new Vector2(
-                -TileScale * (mapData.width - 1) * 0.5f,
-                TileScale * (mapData.height - 1) * 0.5f
-            );
+            Vector2 startPos = GetMapStartPos(mapData);
+
             for (int y = 0; y < mapData.height; ++y) {
                 for (int x = 0; x < mapData.width; ++x) {
                     var obj = ObjectPooling.Instance.Get<Tile>("Tile", mapRoot);
@@ -40,5 +38,10 @@ namespace Core.Map {
             }
             loadedTiles.Clear();
         }
+
+        public static Vector2 GetMapStartPos(MapData mapData) => new Vector2(
+            -TileScale * (mapData.width - 1) * 0.5f,
+            TileScale * (mapData.height - 1) * 0.5f
+        );
     }
 }
