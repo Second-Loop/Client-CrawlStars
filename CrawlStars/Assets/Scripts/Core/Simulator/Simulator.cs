@@ -40,27 +40,24 @@ namespace Core.Simulator {
 
         // temp data
         private Vector2 playerPos = Vector2.up;
-        private Vector2 playerLookDir = Vector2.zero;
         private const float MoveSpeed = 0.2f;
         private const float PlayerRadius = 0.5f;
 
         private void Tick() {
             // Get player's input
             Vector2 moveDirection = inputProvider.GetMoveDirection();
-            Vector2 lookDirection = inputProvider.GetLookingSide();
-            bool isPressedAttack = inputProvider.GetAttack();
+            Vector2 attackDirection = inputProvider.CaptureAttackDirection();
 
             // Simulate
             if (moveDirection != Vector2.zero) {
                 playerPos = Physics.GetNextPosition(playerPos, moveDirection * MoveSpeed, PlayerRadius);
             }
-            playerLookDir += lookDirection;
 
             // Return to clients
             PlayerManager.Instance.Move(playerPos);
-            PlayerManager.Instance.Look(playerLookDir);
-            if (isPressedAttack) {
-                PlayerManager.Instance.Attack();
+            PlayerManager.Instance.Rotate(moveDirection);
+            if (attackDirection != Vector2.zero) {
+                PlayerManager.Instance.Attack(playerPos, attackDirection);
             }
         }
     }

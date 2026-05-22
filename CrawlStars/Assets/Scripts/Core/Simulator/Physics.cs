@@ -15,8 +15,6 @@ namespace Core.Simulator {
             if (!isVerticalBlocked) {
                 origin = nextY;
             }
-
-            Debug.Log($"isHorizontalBlocked: {isHorizontalBlocked} /  isVerticalBlocked: {isVerticalBlocked}");
             return origin;
         }
         
