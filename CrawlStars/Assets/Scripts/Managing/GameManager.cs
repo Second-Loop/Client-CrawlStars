@@ -1,5 +1,6 @@
 using Core.Map;
 using Core.Player;
+using Core.Simulator;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour {
@@ -26,7 +27,7 @@ public class GameManager : MonoBehaviour {
     // 서버에서 정보 받아와서 세팅
     public void Initialize() {
         // 맵 인덱스
-        mapRenderer.Generate(0);
+        mapRenderer.Render(0);
         
         // 플레이어들 정보
         PlayerManager.Instance.Initialize();
