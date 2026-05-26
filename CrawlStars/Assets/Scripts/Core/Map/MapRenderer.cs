@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
-using Newtonsoft.Json;
 using Utility;
 
 namespace Core.Map {
@@ -22,7 +19,7 @@ namespace Core.Map {
                     var obj = ObjectPooling.Instance.Get<Tile>("Tile", mapRoot);
                     if (obj == null) return;
 
-                    var tileType = mapData.map[y][x] == 1 ? Tile.TileType.Wall : Tile.TileType.Ground;
+                    var tileType = (Tile.TileType)mapData.map[y][x];
                     obj.Initialize(tileType, MapHelper.TileSize);
                     obj.transform.localPosition = startPos + new Vector2(x, -y) * MapHelper.TileSize;
                     loadedTiles.Add(obj);

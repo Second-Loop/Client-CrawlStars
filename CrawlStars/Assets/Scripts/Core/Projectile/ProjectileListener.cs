@@ -3,8 +3,6 @@ using Utility;
 
 namespace Core.Projectile {
     public class ProjectileListener : MonoBehaviour {
-        public string Id { get; set; }
-        
         public void MoveTo(Vector3 position) {
             transform.position = position + Vector3.back;
         }

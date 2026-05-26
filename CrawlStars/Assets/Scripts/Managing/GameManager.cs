@@ -29,11 +29,8 @@ public class GameManager : MonoBehaviour {
         // 맵 인덱스
         mapRenderer.Render(0);
         
-        // 플레이어들 정보
-        PlayerManager.Instance.Initialize();
-        
         // 시뮬레이터 가동
         simulator.Initialize();
-        simulator.StartTime();
+        simulator.Activate();
     }
 }

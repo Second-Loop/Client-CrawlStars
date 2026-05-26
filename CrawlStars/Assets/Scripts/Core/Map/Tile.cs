@@ -1,11 +1,10 @@
-using System;
 using UnityEngine;
 using Utility;
 
 namespace Core.Map {
     public class Tile : MonoBehaviour {
         public enum TileType {
-            Ground, Wall
+            Ground, Wall, Bush, Water, SpawnPoint
         }
         
         [SerializeField] public SpriteRenderer spriteRenderer;

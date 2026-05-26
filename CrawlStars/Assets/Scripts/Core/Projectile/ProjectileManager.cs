@@ -42,7 +42,6 @@ namespace Core.Projectile {
 
             projectile.MoveTo(data.Pos);
             projectile.RotateTo(data.Dir);
-            projectile.Id = data.Id;
             
             projectiles.Add(data.Id, projectile);
         }
