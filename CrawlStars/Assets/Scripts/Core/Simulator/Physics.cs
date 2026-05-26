@@ -3,24 +3,31 @@ using UnityEngine;
 
 namespace Core.Simulator {
     public static class Physics {
-        public static Vector2 GetNextPosition(Vector2 origin, Vector2 movement, float radius = 0.5f) {
+        public static Vector2 GetNextPlayerPos(Vector2 origin, Vector2 movement, float radius) {
             Vector2 nextX = origin + new Vector2(movement.x, 0f);
-            bool isHorizontalBlocked = CheckCollision(nextX, radius);
+            bool isHorizontalBlocked = CheckWallCollision(nextX, radius);
             if (!isHorizontalBlocked) {
                 origin = nextX;
             }
 
             Vector2 nextY = origin + new Vector2(0f, movement.y);
-            bool isVerticalBlocked = CheckCollision(nextY, radius);
+            bool isVerticalBlocked = CheckWallCollision(nextY, radius);
             if (!isVerticalBlocked) {
                 origin = nextY;
             }
-
-            Debug.Log($"isHorizontalBlocked: {isHorizontalBlocked} /  isVerticalBlocked: {isVerticalBlocked}");
             return origin;
         }
         
-        private static bool CheckCollision(Vector2 circleCenter, float radius) {
+        public static (Vector2 nextPos, bool hitWall) SimulateProjectile(Vector2 origin, Vector2 movement, float radius) {
+            Vector2 nextPos = origin + movement;
+
+            if (CheckWallCollision(nextPos, radius)) {
+                return (origin, true);
+            }
+            return (nextPos, false);
+        }
+
+        private static bool CheckWallCollision(Vector2 circleCenter, float radius) {
             // 원과 겹칠 수 있는 후보군 추리기
             Vector2Int circleLeftUpIdx = MapHelper.GetMapIdx(circleCenter.x - radius, circleCenter.y + radius);
             Vector2Int circleRightUpIdx = MapHelper.GetMapIdx(circleCenter.x + radius, circleCenter.y - radius);

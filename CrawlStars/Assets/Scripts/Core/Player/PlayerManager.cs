@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using CameraControl;
 using UnityEngine;
 using Utility;
 
@@ -8,7 +10,7 @@ namespace Core.Player {
         private static PlayerManager instance;
         public static PlayerManager Instance => instance ??= new PlayerManager();
         
-        private Dictionary<int, PlayerListener> playerListeners = new Dictionary<int, PlayerListener>();
+        private Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
 
         public void Initialize(/* Player infos from server (id, characterType, position) */) {
             var playerListener = ObjectPooling.Instance.Get<PlayerListener>("Player");
@@ -17,9 +19,10 @@ namespace Core.Player {
                 return;
             }
 
-            playerListener.Id = 1234;
-            playerListener.gameObject.transform.position = Vector3.back;
+            playerListener.Id = Guid.NewGuid().ToString();
+            playerListener.transform.position = Vector3.back;
             playerListeners.TryAdd(playerListener.Id, playerListener);
+            CommonCache.MainCamera.GetComponent<CameraController>().TargetPlayer = playerListener.transform;
         }
 
         public void ClearListeners() {
@@ -39,24 +42,25 @@ namespace Core.Player {
             player.Value.MoveTo(pos);
         }
         
-        public void Look(Vector2 dir /* Player look infos from server (id, direction) */) {
+        public void Rotate(Vector2 dir /* Player look infos from server (id, direction) */) {
             // 서버 연동 이후 id로 찾아서 Action하는 것으로 변환
             var player = playerListeners.FirstOrDefault();
             if (player.Value == null) {
                 Debug.LogError("PlayerManager.Look::Cannot find Player Object");
             }
             
-            player.Value.LookAt(dir);
+            player.Value.RotateTo(dir);
         }
         
-        public void Attack(/* Player attack infos from server (id, true) */) {
+        public void Attack(Vector2 pos, Vector2 dir /* Player attack infos from server */) {
             // 서버 연동 이후 id로 찾아서 Action하는 것으로 변환
             var player = playerListeners.FirstOrDefault();
             if (player.Value == null) {
                 Debug.LogError("PlayerManager.Attack::Cannot find Player Object");
             }
-            
-            player.Value.Attack();
+
+            player.Value.RotateTo(dir);
+            player.Value.Attack(dir);
         }
     }
 }

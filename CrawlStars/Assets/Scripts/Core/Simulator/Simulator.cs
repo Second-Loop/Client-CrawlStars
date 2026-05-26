@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.Controller;
 using Core.Player;
+using Core.Projectile;
 using UnityEngine;
 
 namespace Core.Simulator {
@@ -38,30 +39,82 @@ namespace Core.Simulator {
             isStarted = true;
         }
 
+        private List<ProjectileData> projectiles = new List<ProjectileData>();
+        private List<ProjectileData> willRemoveProjectiles = new List<ProjectileData>();
+        private List<ProjectileData> willAddProjectiles = new List<ProjectileData>();
+
         // temp data
         private Vector2 playerPos = Vector2.up;
-        private Vector2 playerLookDir = Vector2.zero;
-        private const float MoveSpeed = 0.2f;
+
+        private ProjectileData BaseProjectile => new ProjectileData {
+            Pos = playerPos,
+            Speed = 13f,
+            Damage = 10f,
+            Radius = 0.3f
+        };
+        private const float PlayerMoveSpeed = 2f;
         private const float PlayerRadius = 0.5f;
 
         private void Tick() {
-            // Get player's input
+            // ===== Receive client's input =====
             Vector2 moveDirection = inputProvider.GetMoveDirection();
-            Vector2 lookDirection = inputProvider.GetLookingSide();
-            bool isPressedAttack = inputProvider.GetAttack();
+            Vector2 attackDirection = inputProvider.CaptureAttackDirection();
 
-            // Simulate
+            // ===== Simulate =====
+            // 1. 플레이어 움직임
             if (moveDirection != Vector2.zero) {
-                playerPos = Physics.GetNextPosition(playerPos, moveDirection * MoveSpeed, PlayerRadius);
+                Vector2 movement = PlayerMoveSpeed * TickThreshold * moveDirection;
+                playerPos = Physics.GetNextPlayerPos(playerPos, movement, PlayerRadius);
             }
-            playerLookDir += lookDirection;
 
-            // Return to clients
-            PlayerManager.Instance.Move(playerPos);
-            PlayerManager.Instance.Look(playerLookDir);
-            if (isPressedAttack) {
-                PlayerManager.Instance.Attack();
+            // 2. 투사체 움직임
+            foreach (var projectile in projectiles) {
+                Vector2 movement = projectile.Speed * TickThreshold * projectile.Dir;
+                (Vector2 nextPos, bool hitWall) res 
+                    = Physics.SimulateProjectile(projectile.Pos, movement, projectile.Radius);
+
+                projectile.Pos = res.nextPos;
+                if (res.hitWall) {
+                    projectile.IsDestroyed = true;
+                    willRemoveProjectiles.Add(projectile);
+                }
             }
+
+            // 3. 만들어질 투사체 생성
+            ProjectileData newProjectile = null; 
+            if (attackDirection != Vector2.zero) {
+                newProjectile = BaseProjectile;
+                newProjectile.Dir = attackDirection;
+                newProjectile.Id = Guid.NewGuid().ToString();
+                willAddProjectiles.Add(newProjectile);
+            }
+
+            // ===== Send to client =====
+            // 1. 플레이어 처리
+            PlayerManager.Instance.Move(playerPos);
+            PlayerManager.Instance.Rotate(moveDirection);
+            if (attackDirection != Vector2.zero) {
+                PlayerManager.Instance.Attack(playerPos, attackDirection);
+            }
+
+            // 2. 투사체 처리
+            ProjectileManager.Instance.UpdateProjectiles(projectiles);
+            if (newProjectile != null) {
+                ProjectileManager.Instance.Create(newProjectile);
+            }
+            
+            // ===== Post Process =====
+            // 클라에게 지워졌다고 정보를 전송해야 하기 때문
+            foreach (var projectile in willRemoveProjectiles) {
+                projectiles.Remove(projectile);
+            }
+            willRemoveProjectiles.Clear();
+
+            // 생성이 움직임보다 나중에 되기 때문
+            foreach (var projectile in willAddProjectiles) {
+                projectiles.Add(projectile);
+            }
+            willAddProjectiles.Clear();
         }
     }
 }
