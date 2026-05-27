@@ -263,7 +263,7 @@ GameObject:
   - component: {fileID: 1212394192}
   - component: {fileID: 1212394193}
   m_Layer: 0
-  m_Name: NetworkBehaviour
+  m_Name: NetworkManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -295,7 +295,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e8591e6264444495bdab746acf76236e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Network.NetworkBehaviour
+  m_EditorClassIdentifier: Assembly-CSharp::Network.NetworkManager
 --- !u!1 &1301852647
 GameObject:
   m_ObjectHideFlags: 0
@@ -327,7 +327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   mapRenderer: {fileID: 864935732}
   simulator: {fileID: 1346880628}
-  networkBehaviour: {fileID: 1212394193}
+  networkManager: {fileID: 1212394193}
 --- !u!4 &1301852649
 Transform:
   m_ObjectHideFlags: 0

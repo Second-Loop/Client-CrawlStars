@@ -1,115 +1,133 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using NativeWebSocket;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace Network {
     public sealed class WebSocketClient {
         private readonly string url;
-        private WebSocket websocket;
-        private UniTaskCompletionSource connectCompletionSource;
+        private readonly Queue<string> pendingMessages = new();
+        private WebSocket socket;
+        private bool connectionStarted;
 
-        public event Action Connected;
-        public event Action<string> TextReceived;
+        public event Action Opened;
+        public event Action<string> MessageReceived;
         public event Action<string> ErrorReceived;
         public event Action<WebSocketCloseCode> Closed;
 
-        public bool IsConnected =>
-            websocket != null && websocket.State == WebSocketState.Open;
+        public bool IsConnected => socket?.State == WebSocketState.Open;
 
         public WebSocketClient(string url) {
             this.url = url;
         }
 
-        public async UniTask ConnectAsync(string jwtToken = null) {
-            if (websocket != null) {
-                await DisconnectAsync();
+        public void Connect(string jwtToken = null) {
+            if (connectionStarted) {
+                throw new InvalidOperationException("WebSocketClient.ConnectAsync::connection already started.");
             }
 
-            if (!string.IsNullOrEmpty(jwtToken)) {
-                websocket = new WebSocket(
-                    url,
-                    new System.Collections.Generic.Dictionary<string, string> {
-                        { "Authorization", "Bearer " + jwtToken }
-                    }
-                );
-            } else {
-                websocket = new WebSocket(url);
-            }
+            connectionStarted = true;
 
-            websocket.OnOpen += HandleOpen;
-            websocket.OnMessage += HandleMessage;
-            websocket.OnError += HandleError;
-            websocket.OnClose += HandleClose;
+            var header = string.IsNullOrEmpty(jwtToken) 
+                ? null 
+                : new Dictionary<string, string> {{ "Authorization", $"Bearer {jwtToken}" }};
+            socket = new WebSocket(url, header);
+            socket.OnOpen += HandleOpen;
+            socket.OnMessage += HandleMessage;
+            socket.OnError += HandleError;
+            socket.OnClose += HandleClose;
 
-            connectCompletionSource = new UniTaskCompletionSource();
-            _ = websocket.Connect();
-
-            try {
-                await connectCompletionSource.Task;
-            } finally {
-                connectCompletionSource = null;
-            }
+            ConnectInternalAsync().Forget();
         }
 
-        public async UniTask SendTextAsync(string message) {
-            if (!IsConnected) {
-                throw new InvalidOperationException("WebSocket is not connected.");
+        public async UniTask SendStringAsync(string message) {
+            if (socket == null) return;
+
+            // 연결 도중에 보내려고 하면 pending시킴
+            if (socket.State == WebSocketState.Connecting) {
+                pendingMessages.Enqueue(message);
+                return;
             }
 
-            await websocket.SendText(message);
+            if (!IsConnected) {
+                Debug.LogError($"WebSocketClient.SendTextAsync::not connected. failed to send message: {message}");
+                return;
+            }
+            await socket.SendText(message);
         }
 
         public async UniTask SendJsonAsync<T>(T message) {
             string json = JsonConvert.SerializeObject(message);
-            await SendTextAsync(json);
+            await SendStringAsync(json);
         }
 
         public async UniTask DisconnectAsync() {
-            if (websocket == null) {
-                return;
+            if (socket == null) return;
+            if (socket.State is WebSocketState.Open or WebSocketState.Connecting) {
+                await socket.Close();
             }
-
-            websocket.OnOpen -= HandleOpen;
-            websocket.OnMessage -= HandleMessage;
-            websocket.OnError -= HandleError;
-            websocket.OnClose -= HandleClose;
-
-            if (websocket.State == WebSocketState.Open ||
-                websocket.State == WebSocketState.Connecting) {
-                await websocket.Close();
-            }
-
-            websocket = null;
+            CleanupSocket();
         }
 
+        // NativeWebSocket 내부 큐에 저장된 메시지를 꺼내와 각 이벤트를 호출하는 과정
         public void DispatchMessageQueue() {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            websocket?.DispatchMessageQueue();
+            socket?.DispatchMessageQueue();
 #endif
         }
 
+        private async UniTaskVoid ConnectInternalAsync() {
+            try {
+                // 반환 자체는 소켓이 닫힐 때 하지만, 예외를 핸들링하기 위함
+                await socket.Connect();
+            } catch (Exception e) {
+                CleanupSocket();
+                ErrorReceived?.Invoke(e.Message);
+            }
+        }
+        
+        private async UniTaskVoid SendPendingMessages() {
+            while (pendingMessages.Count > 0 && IsConnected) {
+                string message = pendingMessages.Dequeue();
+                await socket.SendText(message);
+            }
+        }
+        
+        private void CleanupSocket() {
+            if (socket == null) return;
+
+            socket.OnOpen -= HandleOpen;
+            socket.OnMessage -= HandleMessage;
+            socket.OnError -= HandleError;
+            socket.OnClose -= HandleClose;
+            socket = null;
+        }
+
+#region Events
         private void HandleOpen() {
-            connectCompletionSource?.TrySetResult();
-            Connected?.Invoke();
+            Opened?.Invoke();
+            SendPendingMessages().Forget();
         }
 
         private void HandleMessage(byte[] bytes) {
             string message = Encoding.UTF8.GetString(bytes);
-            TextReceived?.Invoke(message);
+            MessageReceived?.Invoke(message);
         }
 
         private void HandleError(string error) {
-            connectCompletionSource?.TrySetException(new InvalidOperationException(error));
             ErrorReceived?.Invoke(error);
         }
 
         private void HandleClose(WebSocketCloseCode closeCode) {
-            connectCompletionSource?.TrySetException(
-                new InvalidOperationException($"WebSocket closed before connection completed: {closeCode}")
-            );
+            // 서버로부터 먼저 끊기는 상황 대응
+            CleanupSocket();
+
             Closed?.Invoke(closeCode);
+            pendingMessages.Clear();
         }
+#endregion
     }
 }
