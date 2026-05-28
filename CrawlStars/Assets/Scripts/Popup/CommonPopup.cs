@@ -8,6 +8,10 @@ namespace Popup {
         public class Param : PopupHandler.Param {
             public string title;
             public string description;
+            public Param(string title, string description) {
+                this.title = title;
+                this.description = description;
+            }
         }
 
         public override void SetData(PopupHandler.Param param, int sortingOrder) {
