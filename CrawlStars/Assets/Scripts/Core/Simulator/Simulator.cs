@@ -44,6 +44,11 @@ namespace Core.Simulator {
         public void Activate() {
             isActivated = true;
         }
+        
+        public void Dispose() {
+            isActivated = false;
+            players.Clear();
+        }
 
         private List<PlayerData> players { get; set; } = new List<PlayerData>();
         private List<ProjectileData> projectiles = new List<ProjectileData>();

@@ -2,22 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Utility {
-    public class ObjectPooling : MonoBehaviour {
-        private static ObjectPooling instance;
-        public static ObjectPooling Instance => instance;
-
+    public class ObjectPooling : SingletonMonoBehaviour<ObjectPooling> {
         private static readonly Dictionary<string, Queue<GameObject>> objectPool =
             new Dictionary<string, Queue<GameObject>>();
-
-        private void Awake() {
-            if (instance != null) {
-                Debug.LogError($"{nameof(ObjectPooling)} Instance가 {name}에서 중복 초기화 시도되었습니다.");
-                return;
-            }
-
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
 
         public GameObject Get(string objName, Transform parent = null) {
             if (!objectPool.TryGetValue(objName, out var pool)) {

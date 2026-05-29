@@ -1,29 +1,19 @@
 using Cysharp.Threading.Tasks;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Network {
-    public sealed class NetworkManager : MonoBehaviour {
+    public sealed class NetworkManager : SingletonMonoBehaviour<NetworkManager> {
         private const string restBaseUrl = "http://localhost:3000";
         private const string websocketUrl = "ws://localhost:3000/ws";
-
-        private static NetworkManager instance;
-        public static NetworkManager Instance => instance;
 
         private WebSocketClient socket;
         private string jwtAccessToken;
 
         public RestApiClient Rest { get; private set; }
 
-        private void Awake() {
-            if (instance != null) {
-                Debug.LogError($"{nameof(NetworkManager)} Instance가 {name}에서 중복 초기화 시도되었습니다.");
-                return;
-            }
-
-            instance = this;
+        protected override void Awake() {
+            base.Awake();
             Rest = new RestApiClient(restBaseUrl);
-            DontDestroyOnLoad(gameObject);
         }
 
         private void Update() {

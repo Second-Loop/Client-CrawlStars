@@ -10,6 +10,8 @@ namespace Core.Player {
         public static PlayerManager Instance => instance ??= new PlayerManager();
 
         private Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
+        private PlayerListener myListener;
+        
         public string MyId { get; private set; }
 
         public void Initialize(List<PlayerData> players) {
@@ -26,9 +28,18 @@ namespace Core.Player {
 
                 if (i == 0) {
                     MyId = id;
-                    CommonCache.MainCamera.GetComponent<CameraController>().TargetPlayer = playerListener.transform;
+                    myListener = playerListener;
                 }
             }
+        }
+
+        public void FocusCamera() {
+            if (myListener == null) {
+                Debug.LogError("PlayerManager.FocusCamera::Cannot find my listener object");
+                return;
+            }
+
+            CommonCache.CameraController.TargetPlayer = myListener.transform;
         }
 
         public void ClearListeners() {
@@ -36,7 +47,7 @@ namespace Core.Player {
                 ObjectPooling.Instance.TryAbandon("Player", playerListener.Value.gameObject);
             }
             playerListeners.Clear();
-            CommonCache.MainCamera.GetComponent<CameraController>().TargetPlayer = null;
+            CommonCache.CameraController.TargetPlayer = null;
             MyId = null;
         }
 

@@ -1,0 +1,63 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+jobs:
+  ai-review:
+    # if: contains(github.event.pull_request.labels.*.name, 'ai-review')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get PR diff
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} > pr.diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Prepare prompt
+        run: |
+          cat > prompt.txt <<'EOF'
+          다음 GitHub PR diff를 코드 리뷰해줘.
+
+          리뷰 기준:
+          - 버그 가능성
+          - 보안 이슈
+          - 성능 문제
+          - 가독성
+          - 불필요한 변경
+          - 설계
+
+          너무 장황하지 않게, 중요한 것만 한국어로 작성해줘.
+          EOF
+
+          echo "\n\n--- PR DIFF ---\n" >> prompt.txt
+          head -c 12000 pr.diff >> prompt.txt
+
+      - name: AI Review with GitHub Models
+        id: inference
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4.1-mini
+          prompt-file: prompt.txt
+
+      - name: Comment review
+        run: |
+          cat > review.md <<'EOF'
+          ## 🤖 AI PR Review
+
+          ${{ steps.inference.outputs.response }}
+          EOF
+
+          gh pr comment ${{ github.event.pull_request.number }} --body-file review.md
+        env:
+          GH_TOKEN: ${{ github.token }}
