@@ -16,14 +16,14 @@ namespace Core.Simulator {
 
             Vector2 nextX = target.Pos + new Vector2(movement.x, 0f);
             bool isHorizontalBlocked = CheckWallCollision(nextX, target.Radius) ||
-                                       CheckPlayerCollision(nextX, target.Radius, players, target.Id);
+                                       GetCollidingPlayer(nextX, target.Radius, players, target.Id) != null;
             if (!isHorizontalBlocked) {
                 target.Pos = nextX;
             }
 
             Vector2 nextY = target.Pos + new Vector2(0f, movement.y);
             bool isVerticalBlocked = CheckWallCollision(nextY, target.Radius) ||
-                                     CheckPlayerCollision(nextY, target.Radius, players, target.Id);
+                                     GetCollidingPlayer(nextY, target.Radius, players, target.Id) != null;
             if (!isVerticalBlocked) {
                 target.Pos = nextY;
             }
@@ -38,23 +38,28 @@ namespace Core.Simulator {
             Vector2 movement = target.Speed * Simulator.TickThreshold * target.Dir;
             target.Pos += movement;
 
-            if (CheckWallCollision(target.Pos, target.Radius) ||
-                CheckPlayerCollision(target.Pos, target.Radius, players, target.OwnerId)) {
+            PlayerData hitPlayer = GetCollidingPlayer(target.Pos, target.Radius, players, target.OwnerId);
+            if (hitPlayer != null) {
+                hitPlayer.Hp -= target.Damage;
+                hitPlayer.ReceivedDamage = target.Damage;
+            }
+
+            if (hitPlayer != null || CheckWallCollision(target.Pos, target.Radius)) {
                 target.IsDestroyed = true;
             }
         }
 
-        private static bool CheckPlayerCollision(Vector2 circleCenter, float radius, List<PlayerData> players, string ignorePlayerId) {
+        private static PlayerData GetCollidingPlayer(Vector2 circleCenter, float radius, List<PlayerData> players, string ignorePlayerId) {
             foreach (var player in players) {
-                if (player == null || player.IsDead) continue;
+                if (player == null || player.Hp <= 0) continue;
                 if (player.Id == ignorePlayerId) continue;
 
                 float minDistance = radius + player.Radius;
                 if ((circleCenter - player.Pos).sqrMagnitude <= minDistance * minDistance) {
-                    return true;
+                    return player;
                 }
             }
-            return false;
+            return null;
         }
 
         private static bool CheckWallCollision(Vector2 circleCenter, float radius) {
