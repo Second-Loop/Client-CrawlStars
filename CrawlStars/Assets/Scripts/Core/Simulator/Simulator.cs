@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.Controller;
 using Core.Player;
 using Core.Projectile;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Core.Simulator {
@@ -61,6 +62,12 @@ namespace Core.Simulator {
             Vector2 attackDirection = inputProvider.CaptureAttackDirection();
 
             foreach (var player in players) {
+                if (player.Hp <= 0) {
+                    player.MoveDir = Vector2.zero;
+                    player.AttackDir = Vector2.zero;
+                    continue;
+                }
+
                 player.MoveDir = moveDirection;
                 player.AttackDir = attackDirection;
             }
@@ -115,6 +122,23 @@ namespace Core.Simulator {
                 projectiles.Add(projectile);
             }
             willAddProjectiles.Clear();
+            
+            // ====== Judgement Game Ending ======
+            PlayerData winner = null;
+            int aliveCount = 0;
+
+            foreach (var player in players) {
+                if (player.Hp <= 0) continue;
+
+                winner = player;
+                ++aliveCount;
+            }
+
+            if (aliveCount <= 1) {
+                isActivated = false;
+                bool didWin = PlayerManager.Instance.MyId == winner.Id || aliveCount == 0;
+                GameManager.Instance.EndGameAsync(didWin).Forget();
+            }
         }
     }
 }

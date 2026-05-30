@@ -4,6 +4,8 @@ using Core.Simulator;
 using Cysharp.Threading.Tasks;
 using Network;
 using System;
+using Managing;
+using Popup;
 using UnityEngine;
 
 public class GameManager : SingletonMonoBehaviour<GameManager> {
@@ -27,6 +29,13 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         simulator.Dispose();
         mapRenderer.Clear();
         PlayerManager.Instance.ClearListeners();
+    }
+
+    public async UniTask EndGameAsync(bool didWin) {
+        var desc = didWin ? "Win" : "Lose";
+        var param = new OneButtonPopup.Param("Game End", desc);
+        await PopupManager.Instance.ShowAsync("OneButtonPopup", param);
+        SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, GameManager.Instance.Dispose).Forget();
     }
 
     private async UniTask TestNetwork() {
