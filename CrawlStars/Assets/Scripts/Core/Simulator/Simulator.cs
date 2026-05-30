@@ -30,11 +30,18 @@ namespace Core.Simulator {
         }
 
         public void Initialize() {
-            for (int i = 0; i < 2; ++i) {
-                var player = PlayerData.BasePlayerData;
-                player.Pos = Vector2.up * (i + 1) * 2;
-                players.Add(player);
-            }
+            var player = PlayerData.BasePlayerData;
+            player.Pos = Vector2.up;
+            players.Add(player);
+            
+            player = PlayerData.BasePlayerData;
+            player.Pos = Vector2.up * 2;
+            players.Add(player);
+            
+            player = PlayerData.BasePlayerData;
+            player.Pos = Vector2.up + Vector2.right;
+            players.Add(player);
+
             PlayerManager.Instance.Initialize(players);
 
             accumulator = 0;
