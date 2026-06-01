@@ -3,9 +3,7 @@ using UnityEngine;
 
 namespace Network {
     public sealed class NetworkManager : SingletonMonoBehaviour<NetworkManager> {
-        private const string restBaseUrl = "http://localhost:3000";
-        private const string websocketUrl = "ws://localhost:3000/ws";
-
+        private NetworkConfig config;
         private WebSocketClient socket;
         private string jwtAccessToken;
 
@@ -13,7 +11,8 @@ namespace Network {
 
         protected override void Awake() {
             base.Awake();
-            Rest = new RestApiClient(restBaseUrl);
+            config = NetworkConfig.Load();
+            Rest = new RestApiClient(config.RestBaseUrl);
         }
 
         private void Update() {
@@ -30,7 +29,7 @@ namespace Network {
                 await socket.DisconnectAsync();
             }
 
-            socket = new WebSocketClient(websocketUrl);
+            socket = new WebSocketClient(config.WebSocketUrl);
             RegisterSocketLogHandlers(socket);
             socket.Connect(jwtAccessToken);
         }

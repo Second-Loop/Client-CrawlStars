@@ -1,0 +1,4 @@
+{
+  "restBaseUrl": "https://your-api-host.example.com",
+  "websocketUrl": "wss://your-api-host.example.com/ws"
+}

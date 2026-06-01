@@ -15,7 +15,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
 
     public void Initialize() {
         // 네트워크 테스트
-        // await TestNetwork();
+        TestNetwork().Forget();
 
         // 맵 인덱스
         mapRenderer.Render(0);
