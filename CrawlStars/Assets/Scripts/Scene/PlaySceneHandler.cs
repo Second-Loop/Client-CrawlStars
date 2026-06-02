@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scene {
-    public class PlayBaseSceneHandler : BaseSceneHandler {
+    public class PlaySceneHandler : BaseSceneHandler {
         protected override async UniTask ClickLeaveInternal() {
             GameManager.Instance.SetActiveInput(false);
 
