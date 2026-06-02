@@ -1,32 +1,22 @@
-using Core.Player;
 using Cysharp.Threading.Tasks;
+using Managing;
 using Popup;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Managing {
-    public class PlaySceneHandler : MonoBehaviour {
-        [SerializeField] private Button leaveButton;
+namespace Scene {
+    public class PlaySceneHandler : BaseSceneHandler {
+        protected override async UniTask ClickLeaveInternal() {
+            GameManager.Instance.SetActiveInput(false);
 
-        private bool isClickedLeave;
-
-        private void Start() {
-            leaveButton.onClick.AddListener(OnClickLeaveButton);
-        }
-
-        private void OnClickLeaveButton() {
-            if (isClickedLeave) return;
-
-            isClickedLeave = true;
-            ClickLeaveInternal().Forget();
-        }
-
-        private async UniTask ClickLeaveInternal() {
             var param = new TwoButtonPopup.Param("Leave", "Are you sure you want to leave this game?");
             var result = await PopupManager.Instance.ShowAsync(nameof(TwoButtonPopup), param);
-            if (((TwoButtonPopup.Result)result).isClickedOk) {
+            if (result is TwoButtonPopup.Result { isClickedOk: true }) {
                 SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, GameManager.Instance.Dispose).Forget();
+                return;
             }
+
+            GameManager.Instance.SetActiveInput(true);
             isClickedLeave = false;
         }
     }

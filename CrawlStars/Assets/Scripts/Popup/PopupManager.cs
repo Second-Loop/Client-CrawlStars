@@ -10,6 +10,8 @@ namespace Popup {
 
         private readonly List<KeyValuePair<string, PopupHandler>> popupList =
             new List<KeyValuePair<string, PopupHandler>>();
+        
+        public bool HasOpenPopup => popupList.Count > 0;
 
         public async UniTask<PopupHandler.Result> ShowAsync(string name, PopupHandler.Param param = null) {
             var resource = Resources.Load<PopupHandler>(name);
@@ -58,6 +60,12 @@ namespace Popup {
             }
 
             Debug.LogError($"PopupManager.Close::{target.name}이 열려있지 않습니다.");
+        }
+
+        public void CloseAll() {
+            for (int i = popupList.Count - 1; i >= 0; --i) {
+                RemovePopup(popupList[i].Value, i);
+            }
         }
 
         private void RemovePopup(PopupHandler target, int listIdx, PopupHandler.Result result = null) {

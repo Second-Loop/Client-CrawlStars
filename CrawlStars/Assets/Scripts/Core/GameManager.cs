@@ -23,7 +23,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         
         // 시뮬레이터 가동
         simulator.Initialize();
-        UniTask.Delay(1000).ContinueWith(() => simulator.Activate());
+        UniTask.Delay(1000).ContinueWith(() => simulator.SetActive(true));
     }
 
     public void Dispose() {
@@ -34,12 +34,14 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     }
 
     public async UniTask EndGameAsync(bool didWin) {
-        simulator.Deactivate();
+        simulator.SetActive(false);
         var desc = didWin ? "Win" : "Lose";
         var param = new OneButtonPopup.Param("Game End", desc);
         await PopupManager.Instance.ShowAsync("OneButtonPopup", param);
         SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, Dispose).Forget();
     }
+
+    public void SetActiveInput(bool isActive) => simulator.SetActiveInput(isActive);
 
     private async UniTask TestNetwork() {
         try {

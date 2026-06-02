@@ -1,4 +1,3 @@
-using Core.Player;
 using Cysharp.Threading.Tasks;
 using Popup;
 using UnityEngine;
@@ -7,18 +6,15 @@ using UnityEngine.UI;
 using UnityEditor;
 #endif
 
-namespace Managing {
-    public class MainSceneHandler : MonoBehaviour {
+namespace Scene {
+    public class MainSceneHandler : BaseSceneHandler {
         [SerializeField] private Button playButton;
         [SerializeField] private Button settingButton;
-        [SerializeField] private Button exitButton;
 
-        private bool isClickedExit;
-
-        private void Start() {
+        protected override void Start() {
+            base.Start();
             playButton.onClick.AddListener(OnClickPlayButton);
             settingButton.onClick.AddListener(OnClickSettingButton);
-            exitButton.onClick.AddListener(OnClickExitButton);
         }
 
         private void OnClickPlayButton() {
@@ -28,24 +24,17 @@ namespace Managing {
         private void OnClickSettingButton() {
         }
 
-        private void OnClickExitButton() {
-            if (isClickedExit) return;
-
-            isClickedExit = true;
-            ClickExitInternal().Forget();
-        }
-
-        private async UniTask ClickExitInternal() {
+        protected override async UniTask ClickLeaveInternal() {
             var param = new TwoButtonPopup.Param("Exit", "Are you sure you want to exit?");
             var result = await PopupManager.Instance.ShowAsync(nameof(TwoButtonPopup), param);
-            if (((TwoButtonPopup.Result)result).isClickedOk) {
+            if (result is TwoButtonPopup.Result { isClickedOk: true }) {
 #if UNITY_EDITOR
                 EditorApplication.isPlaying = false;
 #else
                 Application.Quit();
 #endif
             }
-            isClickedExit = false;
+            isClickedLeave = false;
         }
     }
 }
