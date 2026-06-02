@@ -1,10 +1,8 @@
 using System;
-using CameraControl;
 using Cysharp.Threading.Tasks;
-using TMPro;
+using Popup;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using Utility;
 
 namespace Managing {
@@ -12,10 +10,10 @@ namespace Managing {
         [SerializeField] private GameObject loadingScreen;
         [SerializeField] private ProgressBar progressBar;
 
+        public bool IsChanging { get; private set; }
+
         public const string PlaySceneName = "Play";
         public const string MainSceneName = "Main";
-        
-        private bool isChangingScene;
         private const float FakeLoadingProgress = 0.9f;
 
         private void Start() {
@@ -23,19 +21,19 @@ namespace Managing {
         }
 
         public async UniTask ChangeSceneAsync(string sceneName, Action beforeActivateAction = null, Action afterActivateAction = null) {
-            if (isChangingScene) {
+            if (IsChanging) {
                 Debug.LogWarning($"SceneController.ChangeScene::already changing scene to {sceneName}");
                 return;
             }
 
-            isChangingScene = true;
+            IsChanging = true;
             var currentScene = SceneManager.GetActiveScene();
 
             // 다음 씬 Load
             var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             if (op == null) {
                 Debug.LogError($"SceneController.ChangeScene::failed {sceneName}");
-                isChangingScene = false;
+                IsChanging = false;
                 return;
             }
 
@@ -62,6 +60,8 @@ namespace Managing {
             }
             await UniTask.WaitUntil(() => op.isDone);
 
+            PopupManager.Instance.CloseAll();
+
             // 다음 씬 Activate
             var loadedScene = SceneManager.GetSceneByName(sceneName);
             SceneManager.SetActiveScene(loadedScene);
@@ -78,7 +78,7 @@ namespace Managing {
             afterActivateAction?.Invoke();
 
             loadingScreen.SetActive(false);
-            isChangingScene = false;
+            IsChanging = false;
         }
     }
 }

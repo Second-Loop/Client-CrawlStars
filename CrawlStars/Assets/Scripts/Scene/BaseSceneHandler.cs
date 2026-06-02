@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Managing;
 using Popup;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +16,7 @@ namespace Scene {
 
         protected virtual void Update() {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            if (SceneController.Instance.IsChanging) return;
 
             if (PopupManager.Instance.HasOpenPopup) {
                 PopupManager.Instance.CloseTop();

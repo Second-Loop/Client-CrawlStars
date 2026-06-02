@@ -62,6 +62,12 @@ namespace Popup {
             Debug.LogError($"PopupManager.Close::{target.name}이 열려있지 않습니다.");
         }
 
+        public void CloseAll() {
+            for (int i = popupList.Count - 1; i >= 0; --i) {
+                RemovePopup(popupList[i].Value, i);
+            }
+        }
+
         private void RemovePopup(PopupHandler target, int listIdx, PopupHandler.Result result = null) {
             target.Dispose(result);
             Object.Destroy(target.gameObject);
