@@ -8,7 +8,11 @@ namespace Core.Controller {
         public bool IsActivated { get; set; }
         
         private void Update() {
-            if (!IsActivated) return;
+            if (!IsActivated) {
+                AimDirection = Vector2.zero;
+                attackDirection = Vector2.zero;
+                return;
+            }
 
             // 조준
             if (Input.GetKey(KeyCode.Mouse0)) {

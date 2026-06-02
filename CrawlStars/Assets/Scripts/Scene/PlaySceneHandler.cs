@@ -13,6 +13,7 @@ namespace Scene {
             var result = await PopupManager.Instance.ShowAsync(nameof(TwoButtonPopup), param);
             if (result is TwoButtonPopup.Result { isClickedOk: true }) {
                 SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, GameManager.Instance.Dispose).Forget();
+                return;
             }
 
             GameManager.Instance.SetActiveInput(true);
