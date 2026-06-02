@@ -47,14 +47,9 @@ namespace Core.Simulator {
             PlayerManager.Instance.Initialize(players);
         }
 
-        public void Activate() {
-            isActivated = true;
-            SetActiveInput(true);
-        }
-        
-        public void Deactivate() {
-            isActivated = false;
-            SetActiveInput(false);
+        public void SetActive(bool isActive) {
+            isActivated = isActive;
+            SetActiveInput(isActive);
         }
 
         public void SetActiveInput(bool isActive) {
@@ -62,7 +57,7 @@ namespace Core.Simulator {
         }
         
         public void Clear() {
-            Deactivate();
+            SetActive(false);
             accumulator = 0;
             TickCount = 0;
 
