@@ -638,9 +638,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ed60798b911661499e58aac199c366e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainSceneHandler
+  leaveButton: {fileID: 1423674411}
   playButton: {fileID: 1005333753}
   settingButton: {fileID: 1110803934}
-  exitButton: {fileID: 1423674411}
 --- !u!4 &825301180
 Transform:
   m_ObjectHideFlags: 0

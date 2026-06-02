@@ -49,12 +49,16 @@ namespace Core.Simulator {
 
         public void Activate() {
             isActivated = true;
-            inputProvider.IsActivated = true;
+            SetActiveInput(true);
         }
         
         public void Deactivate() {
             isActivated = false;
-            inputProvider.IsActivated = false;
+            SetActiveInput(false);
+        }
+
+        public void SetActiveInput(bool isActive) {
+            inputProvider.IsActivated = isActive;
         }
         
         public void Clear() {

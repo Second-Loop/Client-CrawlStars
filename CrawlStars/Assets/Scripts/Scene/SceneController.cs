@@ -29,7 +29,7 @@ namespace Managing {
             }
 
             isChangingScene = true;
-            Scene currentScene = SceneManager.GetActiveScene();
+            var currentScene = SceneManager.GetActiveScene();
 
             // 다음 씬 Load
             var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
@@ -63,7 +63,7 @@ namespace Managing {
             await UniTask.WaitUntil(() => op.isDone);
 
             // 다음 씬 Activate
-            Scene loadedScene = SceneManager.GetSceneByName(sceneName);
+            var loadedScene = SceneManager.GetSceneByName(sceneName);
             SceneManager.SetActiveScene(loadedScene);
 
             // 기존 씬 Unload

@@ -32,6 +32,8 @@ namespace Core.Controller {
         }
 
         public Vector2 GetMoveDirection() {
+            if (!IsActivated) return Vector2.zero;
+
             float left = Input.GetKey(KeyCode.A) ? -1 : 0;
             float right = Input.GetKey(KeyCode.D) ? 1 : 0;
             float up = Input.GetKey(KeyCode.W) ? 1 : 0;

@@ -41,6 +41,8 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, Dispose).Forget();
     }
 
+    public void SetActiveInput(bool isActive) => simulator.SetActiveInput(isActive);
+
     private async UniTask TestNetwork() {
         try {
             // REST API 테스트
