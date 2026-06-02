@@ -4,6 +4,7 @@ using Core.Simulator;
 using Cysharp.Threading.Tasks;
 using Network;
 using System;
+using Core.Projectile;
 using Managing;
 using Popup;
 using UnityEngine;
@@ -22,20 +23,22 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         
         // 시뮬레이터 가동
         simulator.Initialize();
-        simulator.Activate();
+        UniTask.Delay(1000).ContinueWith(() => simulator.Activate());
     }
 
     public void Dispose() {
-        simulator.Dispose();
+        simulator.Clear();
         mapRenderer.Clear();
         PlayerManager.Instance.ClearListeners();
+        ProjectileManager.Instance.ClearListener();
     }
 
     public async UniTask EndGameAsync(bool didWin) {
+        simulator.Deactivate();
         var desc = didWin ? "Win" : "Lose";
         var param = new OneButtonPopup.Param("Game End", desc);
         await PopupManager.Instance.ShowAsync("OneButtonPopup", param);
-        SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, GameManager.Instance.Dispose).Forget();
+        SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName, Dispose).Forget();
     }
 
     private async UniTask TestNetwork() {

@@ -5,8 +5,11 @@ namespace Core.Controller {
     public class InputProvider : MonoBehaviour {
         public Vector2 AimDirection { get; private set; }
         private Vector2 attackDirection;
+        public bool IsActivated { get; set; }
         
         private void Update() {
+            if (!IsActivated) return;
+
             // 조준
             if (Input.GetKey(KeyCode.Mouse0)) {
                 var mouseWorldPos = GetMouseWorldPos();
