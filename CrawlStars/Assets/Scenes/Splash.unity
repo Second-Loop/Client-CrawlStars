@@ -542,6 +542,7 @@ GameObject:
   - component: {fileID: 1143580324}
   - component: {fileID: 1143580323}
   - component: {fileID: 1143580322}
+  - component: {fileID: 1143580325}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -610,6 +611,71 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1143580325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1143580321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b31e9a2f4c414b4589d86cda620f15a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Managing.PersistentSceneObject
+--- !u!1 &1150000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1150000002}
+  - component: {fileID: 1150000003}
+  - component: {fileID: 1150000004}
+  m_Layer: 0
+  m_Name: BootstrapAudioListener
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1150000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1150000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &1150000003
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1150000001}
+  m_Enabled: 1
+--- !u!114 &1150000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1150000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b31e9a2f4c414b4589d86cda620f15a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Managing.PersistentSceneObject
 --- !u!1 &1160010930
 GameObject:
   m_ObjectHideFlags: 0
@@ -806,7 +872,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1352566954}
   - component: {fileID: 1352566953}
-  - component: {fileID: 1352566952}
   - component: {fileID: 1352566955}
   m_Layer: 0
   m_Name: Main Camera
@@ -815,14 +880,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1352566952
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1352566951}
-  m_Enabled: 1
 --- !u!20 &1352566953
 Camera:
   m_ObjectHideFlags: 0

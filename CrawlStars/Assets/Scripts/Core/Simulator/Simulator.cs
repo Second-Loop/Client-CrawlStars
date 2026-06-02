@@ -30,6 +30,8 @@ namespace Core.Simulator {
         }
 
         public void Initialize() {
+            Clear();
+
             var player = PlayerData.BasePlayerData;
             player.Pos = Vector2.up;
             players.Add(player);
@@ -43,23 +45,28 @@ namespace Core.Simulator {
             players.Add(player);
 
             PlayerManager.Instance.Initialize(players);
-            
-            willRemovePlayers.Clear();
-            willRemoveProjectiles.Clear();
-            willAddProjectiles.Clear();
-
-            accumulator = 0;
-            TickCount = 0;
-            isActivated = false;
         }
 
         public void Activate() {
             isActivated = true;
+            inputProvider.IsActivated = true;
         }
         
-        public void Dispose() {
+        public void Deactivate() {
             isActivated = false;
+            inputProvider.IsActivated = false;
+        }
+        
+        public void Clear() {
+            Deactivate();
+            accumulator = 0;
+            TickCount = 0;
+
             players.Clear();
+            projectiles.Clear();
+            willRemovePlayers.Clear();
+            willRemoveProjectiles.Clear();
+            willAddProjectiles.Clear();
         }
 
         private List<PlayerData> players = new List<PlayerData>();

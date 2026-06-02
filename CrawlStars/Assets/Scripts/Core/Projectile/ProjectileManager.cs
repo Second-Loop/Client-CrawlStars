@@ -42,8 +42,17 @@ namespace Core.Projectile {
 
             projectile.MoveTo(data.Pos);
             projectile.RotateTo(data.Dir);
-            
-            projectiles.Add(data.Id, projectile);
+
+            if (!projectiles.TryAdd(data.Id, projectile)) {
+                Debug.LogError($"ProjectileManager.Create::Can not add {data.Id} to projectiles. it already exists");
+            }
+        }
+
+        public void ClearListener() {
+            foreach (var projectile in projectiles) {
+                ObjectPooling.Instance.TryAbandon("Projectile", projectile.Value.gameObject);
+            }
+            projectiles.Clear();
         }
     }
 }
