@@ -43,21 +43,18 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     public void SetActiveInput(bool isActive) => simulator.SetActiveInput(isActive);
 
     public async UniTask MatchAsync(CancellationToken ct) {
-        try {
-            // REST API 테스트
-            NetworkTestSession session = await networkManager.TestRestApiAsync();
-            if (ct.IsCancellationRequested) return;
+        // REST API 테스트
+        NetworkTestSession session = await networkManager.TestRestApiAsync(ct);
+        ct.ThrowIfCancellationRequested();
 
-            // 웹소켓 테스트
-            networkManager.ConnectSocket(session.RoomID, session.PlayerID);
-            await networkManager.SendSocketJsonAsync(new InputMessage {
-                MoveDir = new NetworkVector2 { X = 1f, Y = 0f },
-                AttackDir = new NetworkVector2 { X = 1f, Y = 0f },
-                PressedAttack = false
-            });
-        } catch (Exception exception) {
-            Debug.LogError(exception);
-        }
+        // 웹소켓 테스트
+        networkManager.ConnectSocket(session.RoomID, session.PlayerID);
+        await networkManager.SendSocketJsonAsync(new InputMessage {
+            MoveDir = new NetworkVector2 { X = 1f, Y = 0f },
+            AttackDir = new NetworkVector2 { X = 1f, Y = 0f },
+            PressedAttack = false
+        });
+        ct.ThrowIfCancellationRequested();
     }
 
     public void CancelMatch() {

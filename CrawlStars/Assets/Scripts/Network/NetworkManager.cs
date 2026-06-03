@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -80,7 +81,7 @@ namespace Network {
             socketClient.Closed += closeCode => Debug.Log($"WebSocket Closed: {closeCode}");
         }
 
-        public async UniTask<NetworkTestSession> TestRestApiAsync() {
+        public async UniTask<NetworkTestSession> TestRestApiAsync(CancellationToken ct) {
             // 1. 서버 상태 받아오기
             // HealthResponse health = await Rest.GetAsync<HealthResponse>("health");
             // Debug.Log($"REST Health: status={health.Status}, service={health.Service}");
@@ -95,10 +96,12 @@ namespace Network {
                 throw new InvalidOperationException("REST CreateRoom failed: room id is empty.");
             }
             Debug.Log($"REST CreateRoom: id={createdRoom.Id}, status={createdRoom.Status}");
+            ct.ThrowIfCancellationRequested();
 
             // 4. 플레이어 방에 참가시키기: 여기서 플레이어 Id 받음
             PlayerResponse player = await RestClient.PostAsync<object, PlayerResponse>($"rooms/{createdRoom.Id}/players", null);
             Debug.Log($"REST CreateRoomPlayer: id={player.Id}, team={player.Team}, slot={player.Slot}");
+            ct.ThrowIfCancellationRequested();
 
             // 5. 방 상태 받아오기
             // RoomResponse room = await Rest.GetAsync<RoomResponse>($"rooms/{createdRoom.Id}");
@@ -107,6 +110,7 @@ namespace Network {
             // 6. 방 시작하기
             RoomResponse startedRoom = await RestClient.PostAsync<object, RoomResponse>($"rooms/{createdRoom.Id}/start", null);
             Debug.Log($"REST StartRoom: id={startedRoom.Id}, status={startedRoom.Status}, tick={startedRoom.LatestSnapshot?.Tick ?? 0}");
+            ct.ThrowIfCancellationRequested();
 
             return new NetworkTestSession(createdRoom.Id, player.Id);
         }

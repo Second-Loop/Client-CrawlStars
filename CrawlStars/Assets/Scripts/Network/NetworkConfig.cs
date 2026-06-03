@@ -15,7 +15,7 @@ namespace Network {
 
             if (!File.Exists(configPath)) {
                 Debug.LogError($"NetworkConfig.Load::config file not found. using local defaults. path={configPath}");
-                return new NetworkConfig();
+                return null;
             }
 
             try {
@@ -24,7 +24,7 @@ namespace Network {
                 return FromFileConfig(fileConfig);
             } catch (Exception e) {
                 Debug.LogError($"NetworkConfig.Load::failed to load config. using local defaults. error={e.Message}");
-                return new NetworkConfig();
+                return null;
             }
         }
 

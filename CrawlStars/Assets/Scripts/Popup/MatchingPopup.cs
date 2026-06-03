@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Core.Player;
 using Cysharp.Threading.Tasks;
@@ -32,6 +33,19 @@ namespace Popup {
                 progress += 0.1f;
                 progressBar.SetValue(Mathf.Clamp(progress, 0f, 0.95f));
             }
+            
+            try {
+                // 예외 잡기용
+                await matchTask;
+            } catch (Exception ex) {
+                GameManager.Instance.CancelMatch();
+                if (ex is not OperationCanceledException) {
+                    RequestPopupClosing();
+                    Debug.LogError(ex);
+                }
+                return;
+            }
+
             progressBar.SetValue(1f);
 
             SceneController.Instance.ChangeSceneAsync(SceneController.PlaySceneName,
