@@ -47,15 +47,15 @@ namespace Popup {
         }
 
         protected virtual void OnClickQuit() {
-            RequestClosing();
+            RequestPopupClosing();
         }
 
         protected virtual void OnClickOk() {
-            RequestClosing();
+            RequestPopupClosing();
         }
 
         // 팝업에서 닫을 때, 팝업의 결괏값 전달 필요
-        protected void RequestClosing(Result result = null) {
+        protected void RequestPopupClosing(Result result = null) {
             PopupManager.Instance.Close(this, result);
         }
     }

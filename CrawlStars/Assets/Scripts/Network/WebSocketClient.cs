@@ -40,7 +40,7 @@ namespace Network {
             socket.OnError += HandleError;
             socket.OnClose += HandleClose;
 
-            ConnectInternalAsync().Forget();
+            ConnectInternal().Forget();
         }
 
         public async UniTask SendStringAsync(string message) {
@@ -64,12 +64,19 @@ namespace Network {
             await SendStringAsync(json);
         }
 
-        public async UniTask DisconnectAsync() {
+        public void Disconnect() {
             if (socket == null) return;
-            if (socket.State is WebSocketState.Open or WebSocketState.Connecting) {
-                await socket.Close();
+
+            pendingMessages.Clear();
+            UnregisterEvents(socket);
+
+            try {
+                socket.CancelConnection();
+            } catch (Exception e) {
+                Debug.LogWarning($"WebSocket cancel ignored during disconnect: {e.Message}");
+            } finally {
+                socket = null;
             }
-            CleanupSocket();
         }
 
         // NativeWebSocket 내부 큐에 저장된 메시지를 꺼내와 각 이벤트를 호출하는 과정
@@ -79,12 +86,17 @@ namespace Network {
 #endif
         }
 
-        private async UniTaskVoid ConnectInternalAsync() {
+        private async UniTaskVoid ConnectInternal() {
+            if (socket == null) return;
+
             try {
                 // 반환 자체는 소켓이 닫힐 때 하지만, 예외를 핸들링하기 위함
                 await socket.Connect();
             } catch (Exception e) {
-                CleanupSocket();
+                if (socket != null) {
+                    UnregisterEvents(socket);
+                    socket = null;
+                }
                 ErrorReceived?.Invoke(e.Message);
             }
         }
@@ -96,14 +108,11 @@ namespace Network {
             }
         }
         
-        private void CleanupSocket() {
-            if (socket == null) return;
-
-            socket.OnOpen -= HandleOpen;
-            socket.OnMessage -= HandleMessage;
-            socket.OnError -= HandleError;
-            socket.OnClose -= HandleClose;
-            socket = null;
+        private void UnregisterEvents(WebSocket targetSocket) {
+            targetSocket.OnOpen -= HandleOpen;
+            targetSocket.OnMessage -= HandleMessage;
+            targetSocket.OnError -= HandleError;
+            targetSocket.OnClose -= HandleClose;
         }
 
 #region Events
@@ -123,7 +132,10 @@ namespace Network {
 
         private void HandleClose(WebSocketCloseCode closeCode) {
             // 서버로부터 먼저 끊기는 상황 대응
-            CleanupSocket();
+            if (socket != null) {
+                UnregisterEvents(socket);
+                socket = null;
+            }
 
             Closed?.Invoke(closeCode);
             pendingMessages.Clear();

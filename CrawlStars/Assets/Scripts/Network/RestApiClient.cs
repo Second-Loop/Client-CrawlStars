@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
@@ -68,7 +69,9 @@ namespace Network {
 
             string responseBody = request.downloadHandler?.text;
             if (request.result != UnityWebRequest.Result.Success) {
-                Debug.LogError($"RestApiClient.SendRawAsync::{request.responseCode}/{request.error}/{responseBody}");
+                throw new InvalidOperationException(
+                    $"RestApiClient.SendRawAsync::{method} {url} failed. code={request.responseCode}, error={request.error}, body={responseBody}"
+                );
             }
             return responseBody;
         }

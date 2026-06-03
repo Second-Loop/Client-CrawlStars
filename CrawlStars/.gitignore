@@ -108,3 +108,6 @@ InitTestScene*.unity*
 .idea/
 .vscode/
 .DS_Store
+
+# Local runtime network settings. Keep real server endpoints out of source.
+/network_config.json

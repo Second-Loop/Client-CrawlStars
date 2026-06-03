@@ -23,15 +23,15 @@ namespace Popup {
         }
 
         protected override void OnClickQuit() {
-            RequestClosing(new Result(false));
+            RequestPopupClosing(new Result(false));
         }
 
         protected override void OnClickOk() {
-            RequestClosing(new Result(true));
+            RequestPopupClosing(new Result(true));
         }
 
         protected void OnClickNo() {
-            RequestClosing(new Result(false));
+            RequestPopupClosing(new Result(false));
         }
     }
 }

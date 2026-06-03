@@ -1,0 +1,4 @@
+{
+  "restBaseUrl": "https://your-api-host.example.com",
+  "websocketUrlTemplate": "wss://your-api-host.example.com/rooms/{roomID}/players/{playerID}"
+}
