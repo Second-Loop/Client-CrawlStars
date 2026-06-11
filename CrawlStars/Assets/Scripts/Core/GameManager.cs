@@ -43,12 +43,11 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     public void SetActiveInput(bool isActive) => simulator.SetActiveInput(isActive);
 
     public async UniTask MatchAsync(CancellationToken ct) {
-        // REST API 테스트
-        NetworkTestSession session = await networkManager.TestRestApiAsync(ct);
+        MatchResponse response = await networkManager.MatchAsync(ct);
+        Debug.Log($"Room Id: {response.Room.Id}, Status: {response.Room.Status}, MaxPlayers: {response.Room.MaxPlayers}");
+        Debug.Log($"My Id: {response.Player.Id}, Slot: {response.Player.Slot}, Team: {response.Player.Team}");
         ct.ThrowIfCancellationRequested();
 
-        // 웹소켓 테스트
-        networkManager.ConnectSocket(session.RoomID, session.PlayerID);
         await networkManager.SendSocketJsonAsync(new InputMessage {
             MoveDir = new NetworkVector2 { X = 1f, Y = 0f },
             AttackDir = new NetworkVector2 { X = 1f, Y = 0f },

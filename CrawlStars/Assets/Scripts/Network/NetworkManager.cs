@@ -39,15 +39,15 @@ namespace Network {
             RestClient.SetJwtToken(accessToken);
         }
 
-        public void ConnectSocket(string roomID, string playerID) {
-            if (!IsInitialized || string.IsNullOrEmpty(roomID) || string.IsNullOrEmpty(playerID)) {
+        private void ConnectSocket(string path) {
+            if (!IsInitialized || string.IsNullOrEmpty(path)) {
                 Debug.LogError("NetworkManager.ConnectSocketAsync::not initialized or invalid parameter");
                 return;
             }
 
             DisconnectSocket();
 
-            socketClient = new WebSocketClient(config.GetWebSocketUrl(roomID, playerID));
+            socketClient = new WebSocketClient(config.GetWebSocketUrl(path));
             RegisterSocketLogEvents(socketClient);
             socketClient.Connect(jwtAccessToken);
         }
@@ -71,6 +71,17 @@ namespace Network {
             }
 
             await socketClient.SendJsonAsync(message);
+        }
+
+        public async UniTask<MatchResponse> MatchAsync(CancellationToken ct) {
+            MatchResponse response = await RestClient.PostAsync<object, MatchResponse>("matchmaking/join", null);
+            if (response == null) {
+                Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
+                return null;
+            }
+
+            ConnectSocket(response.WebSocketPath);
+            return response;
         }
 
 #region Test
