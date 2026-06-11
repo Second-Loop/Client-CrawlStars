@@ -13,7 +13,6 @@ using UnityEngine;
 public class GameManager : SingletonMonoBehaviour<GameManager> {
     [SerializeField] private MapRenderer mapRenderer;
     [SerializeField] private Simulator simulator;
-    [SerializeField] private NetworkManager networkManager;
 
     public void Initialize() {
         // 맵 인덱스
@@ -29,7 +28,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         mapRenderer.Clear();
         PlayerManager.Instance.ClearListeners();
         ProjectileManager.Instance.ClearListener();
-        CancelMatch();
+        NetworkManager.Instance.DisconnectSocketAsync().Forget();
     }
 
     public async UniTask EndGameAsync(bool didWin) {
@@ -41,22 +40,4 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     }
 
     public void SetActiveInput(bool isActive) => simulator.SetActiveInput(isActive);
-
-    public async UniTask MatchAsync(CancellationToken ct) {
-        MatchResponse response = await networkManager.MatchAsync(ct);
-        Debug.Log($"Room Id: {response.Room.Id}, Status: {response.Room.Status}, MaxPlayers: {response.Room.MaxPlayers}");
-        Debug.Log($"My Id: {response.Player.Id}, Slot: {response.Player.Slot}, Team: {response.Player.Team}");
-        ct.ThrowIfCancellationRequested();
-
-        await networkManager.SendSocketJsonAsync(new InputMessage {
-            MoveDir = new NetworkVector2 { X = 1f, Y = 0f },
-            AttackDir = new NetworkVector2 { X = 1f, Y = 0f },
-            PressedAttack = false
-        });
-        ct.ThrowIfCancellationRequested();
-    }
-
-    public void CancelMatch() {
-        networkManager.DisconnectSocket();
-    }
 }

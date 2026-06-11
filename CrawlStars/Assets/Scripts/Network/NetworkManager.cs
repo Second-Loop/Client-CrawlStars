@@ -11,6 +11,7 @@ namespace Network {
 
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
+        public bool IsMatched { get; private set; }
 
         protected override void Awake() {
             base.Awake();
@@ -39,24 +40,27 @@ namespace Network {
             RestClient.SetJwtToken(accessToken);
         }
 
-        private void ConnectSocket(string path) {
+        private async UniTask ConnectSocketAsync(string path, CancellationToken ct) {
             if (!IsInitialized || string.IsNullOrEmpty(path)) {
                 Debug.LogError("NetworkManager.ConnectSocketAsync::not initialized or invalid parameter");
                 return;
             }
 
-            DisconnectSocket();
+            await DisconnectSocketAsync();
+            ct.ThrowIfCancellationRequested();
 
             socketClient = new WebSocketClient(config.GetWebSocketUrl(path));
             RegisterSocketLogEvents(socketClient);
             socketClient.Connect(jwtAccessToken);
         }
 
-        public void DisconnectSocket() {
-            if (socketClient == null) return;
+        public UniTask DisconnectSocketAsync() {
+            if (socketClient == null) return UniTask.CompletedTask;
 
-            socketClient.Disconnect();
+            // 복사해서 사용하기 때문에 연달아서 Connect 해도 충돌 없음
+            var targetClient = socketClient;
             socketClient = null;
+            return targetClient.DisconnectAsync();
         }
 
         public async UniTask SendSocketJsonAsync<T>(T message) {
@@ -79,52 +83,34 @@ namespace Network {
                 Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
                 return null;
             }
+            Debug.Log($"Room Id: {response.Room.Id}, Status: {response.Room.Status}, MaxPlayers: {response.Room.MaxPlayers}");
+            Debug.Log($"My Id: {response.Player.Id}, Slot: {response.Player.Slot}, Team: {response.Player.Team}");
+            ct.ThrowIfCancellationRequested();
 
-            ConnectSocket(response.WebSocketPath);
+            // 방 입장
+            await ConnectSocketAsync(response.WebSocketPath, ct);
+            ct.ThrowIfCancellationRequested();
+
+            // 다른 유저 기다리기
+            await UniTask.WaitUntil(() => IsMatched, cancellationToken: ct);
+
+            // await SendSocketJsonAsync(new InputMessage {
+            //     MoveDir = new NetworkVector2 { X = 1f, Y = 0f },
+            //     AttackDir = new NetworkVector2 { X = 1f, Y = 0f },
+            //     PressedAttack = false
+            // });
             return response;
         }
 
-#region Test
-        private static void RegisterSocketLogEvents(WebSocketClient socketClient) {
+        private void RegisterSocketLogEvents(WebSocketClient socketClient) {
             socketClient.Opened += () => Debug.Log("WebSocket OnOpen");
             socketClient.MessageReceived += message => Debug.Log($"WebSocket Message: {message}");
             socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
             socketClient.Closed += closeCode => Debug.Log($"WebSocket Closed: {closeCode}");
+
+            // match
+            socketClient.MessageReceived += message => IsMatched = true;
+            socketClient.Closed += closeCode => IsMatched = false;
         }
-
-        public async UniTask<NetworkTestSession> TestRestApiAsync(CancellationToken ct) {
-            // 1. 서버 상태 받아오기
-            // HealthResponse health = await Rest.GetAsync<HealthResponse>("health");
-            // Debug.Log($"REST Health: status={health.Status}, service={health.Service}");
-
-            // 2. 방 리스트 받아오기
-            // RoomListResponse roomList = await Rest.GetAsync<RoomListResponse>("rooms");
-            // Debug.Log($"REST Rooms: count={roomList?.Rooms?.Length ?? 0}");
-
-            // 3. 방 만들기: 여기서 방 Id 받음
-            RoomResponse createdRoom = await RestClient.PostAsync<object, RoomResponse>("rooms", null);
-            if (string.IsNullOrEmpty(createdRoom?.Id)) {
-                throw new InvalidOperationException("REST CreateRoom failed: room id is empty.");
-            }
-            Debug.Log($"REST CreateRoom: id={createdRoom.Id}, status={createdRoom.Status}");
-            ct.ThrowIfCancellationRequested();
-
-            // 4. 플레이어 방에 참가시키기: 여기서 플레이어 Id 받음
-            PlayerResponse player = await RestClient.PostAsync<object, PlayerResponse>($"rooms/{createdRoom.Id}/players", null);
-            Debug.Log($"REST CreateRoomPlayer: id={player.Id}, team={player.Team}, slot={player.Slot}");
-            ct.ThrowIfCancellationRequested();
-
-            // 5. 방 상태 받아오기
-            // RoomResponse room = await Rest.GetAsync<RoomResponse>($"rooms/{createdRoom.Id}");
-            // Debug.Log($"REST GetRoom: id={room.Id}, status={room.Status}, players={room.Players?.Length ?? 0}");
-
-            // 6. 방 시작하기
-            RoomResponse startedRoom = await RestClient.PostAsync<object, RoomResponse>($"rooms/{createdRoom.Id}/start", null);
-            Debug.Log($"REST StartRoom: id={startedRoom.Id}, status={startedRoom.Status}, tick={startedRoom.LatestSnapshot?.Tick ?? 0}");
-            ct.ThrowIfCancellationRequested();
-
-            return new NetworkTestSession(createdRoom.Id, player.Id);
-        }
-#endregion
     }
 }
