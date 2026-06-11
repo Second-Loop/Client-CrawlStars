@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
+using Core.Player;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Network {
@@ -12,6 +14,8 @@ namespace Network {
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
         public bool IsMatched { get; private set; }
+
+        public event Action<SnapshotDto> SnapshotReceived;
 
         protected override void Awake() {
             base.Awake();
@@ -90,6 +94,7 @@ namespace Network {
             }
             Debug.Log($"Room Id: {response.Room.Id}, Status: {response.Room.Status}, MaxPlayers: {response.Room.MaxPlayers}");
             Debug.Log($"My Id: {response.Player.Id}, Slot: {response.Player.Slot}, Team: {response.Player.Team}");
+            PlayerManager.Instance.MyId = response.Player.Id;
             ct.ThrowIfCancellationRequested();
 
             // 방 입장
@@ -113,9 +118,34 @@ namespace Network {
             socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
             socketClient.Closed += closeCode => Debug.Log($"WebSocket Closed: {closeCode}");
 
-            // match
-            socketClient.MessageReceived += message => IsMatched = true;
             socketClient.Closed += closeCode => IsMatched = false;
+            socketClient.MessageReceived += HandleSocketMessage;
+        }
+
+        private void HandleSocketMessage(string message) {
+            try {
+                IsMatched = true;
+
+                var envelope = JsonConvert.DeserializeObject<MessageEnvelope>(message);
+                switch (envelope?.Type) {
+                    case "snapshot":
+                        var snapshotMessage = JsonConvert.DeserializeObject<SnapshotMessage>(message);
+                        if (snapshotMessage?.Snapshot != null) {
+                            SnapshotReceived?.Invoke(snapshotMessage.Snapshot);
+                        }
+                        break;
+                    case "error":
+                        var errorMessage = JsonConvert.DeserializeObject<ErrorMessage>(message);
+                        Debug.LogError($"WebSocket API Error: {errorMessage?.Error?.Code}/{errorMessage?.Error?.Message}");
+                        break;
+                }
+            } catch (JsonException e) {
+                Debug.LogError($"NetworkManager.HandleSocketMessage::invalid message/{e.Message}");
+            }
+        }
+
+        private sealed class MessageEnvelope {
+            [JsonProperty("Type")] public string Type { get; set; }
         }
     }
 }

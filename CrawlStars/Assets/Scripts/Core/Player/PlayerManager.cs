@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
 using CameraControl;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Utility;
 
@@ -12,25 +12,58 @@ namespace Core.Player {
         private Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
         private PlayerListener myListener;
         
-        public string MyId { get; private set; }
+        public string MyId { get; set; }
 
-        public void Initialize(List<PlayerData> players) {
-            for (int i = 0; i < players.Count; ++i) {
-                var playerListener = ObjectPooling.Instance.Get<PlayerListener>("Player");
-                if (playerListener == null) {
-                    Debug.LogError("PlayerManager.Initialize::Cannot find Player Object");
-                    return;
+        public void Initialize(IReadOnlyList<PlayerData> players) {
+            ClearListeners();
+
+            foreach (var player in players) {
+                if (player == null || string.IsNullOrEmpty(player.Id)) {
+                    Debug.LogError("PlayerManager.Initialize::invalid data from server");
+                    continue;
                 }
 
-                var data = players[i];
-                var id = data.Id;
-                playerListener.transform.position = (Vector3)data.Pos + Vector3.back;
-                playerListener.Initialize(data);
-                playerListeners.TryAdd(id, playerListener);
+                var listener = ObjectPooling.Instance.Get<PlayerListener>("Player");
+                if (listener == null) continue;
 
-                if (i == 0) {
-                    MyId = id;
-                    myListener = playerListener;
+                listener.Initialize(player);
+                playerListeners.Add(player.Id, listener);
+
+                if (player.Id == MyId) {
+                    myListener = listener;
+                }
+            }
+        }
+
+        public void ApplySnapshot(IReadOnlyList<PlayerData> players) {
+            foreach (var player in players) {
+                if (player == null || string.IsNullOrEmpty(player.Id)) continue;
+
+                if (!playerListeners.TryGetValue(player.Id, out var listener)) {
+                    if (player.IsDead) continue;
+
+                    // 살아있는데 없으면 에러
+                    Debug.LogError($"PlayerManager.ApplySnapshot::PlayerId not found:{player.Id}");
+                    continue;
+                }
+
+                if (player.IsDead) {
+                    ObjectPooling.Instance.TryAbandon("Player", listener.gameObject);
+                    playerListeners.Remove(player.Id);
+                    
+                    // 내가 죽었을 때, 추후 서버로부터 메시지 받는 것으로..
+                    if (player.Id == MyId) {
+                        GameManager.Instance.EndGameAsync(false).Forget();
+                    }
+                    continue;
+                }
+
+                listener.MoveTo(player.Pos.ToVector2());
+                listener.RotateTo(player.MoveDir.ToVector2());
+
+                if (player.PressedAttack) {
+                    listener.RotateTo(player.AttackDir.ToVector2());
+                    listener.Attack(player.AttackDir.ToVector2());
                 }
             }
         }
@@ -50,42 +83,7 @@ namespace Core.Player {
             }
             playerListeners.Clear();
             CommonCache.CameraController.TargetPlayer = null;
-            MyId = null;
-        }
-
-        public void Move(List<PlayerData> players) {
-            foreach (var player in players) {
-                if (!playerListeners.TryGetValue(player.Id, out var listener)) {
-                    Debug.LogError("PlayerManager.Move::Cannot find Player Object");
-                    continue;
-                }
-                listener.RotateTo(player.MoveDir);
-                listener.MoveTo(player.Pos);
-            }
-        }
-
-        public void BeingHit(List<PlayerData> players) {
-            foreach (var player in players) {
-                if (player.ReceivedDamage <= 0) continue;
-
-                if (!playerListeners.TryGetValue(player.Id, out var listener)) {
-                    Debug.LogError("PlayerManager.Attack::Cannot find Player Object");
-                    continue;
-                }
-                listener.BeingHit(player.Hp, player.ReceivedDamage);
-                player.ReceivedDamage = 0;
-            }
-        }
-        
-        public void Attack(List<PlayerData> players) {
-            foreach (var player in players) {
-                if (!playerListeners.TryGetValue(player.Id, out var listener)) {
-                    Debug.LogError("PlayerManager.Attack::Cannot find Player Object");
-                    continue;
-                }
-                listener.RotateTo(player.AttackDir);
-                listener.Attack(player.AttackDir);
-            }
+            myListener = null;
         }
     }
 }

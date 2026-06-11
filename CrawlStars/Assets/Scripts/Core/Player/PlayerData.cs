@@ -1,6 +1,5 @@
-using System;
 using Newtonsoft.Json;
-using UnityEngine;
+using Network;
 
 namespace Core.Player {
     public class PlayerData {
@@ -8,25 +7,19 @@ namespace Core.Player {
             
         }
         
-        public string Id { get; set; }
-        public Vector2 Pos { get; set; }
-        public Vector2 MoveDir { get; set; }
-        public Vector2 AttackDir { get; set; }
-        public float Speed { get; set; }
-        public float Radius { get; set; }
+        [JsonProperty("Id")] public string Id { get; set; }
+        [JsonProperty("Team")] public string Team { get; set; }
+        [JsonProperty("Slot")] public int Slot { get; set; }
+        [JsonProperty("Pos")] public Vector2Dto Pos { get; set; }
+        [JsonProperty("MoveDir")] public Vector2Dto MoveDir { get; set; }
+        [JsonProperty("AttackDir")] public Vector2Dto AttackDir { get; set; }
+        [JsonProperty("Speed")] public float Speed { get; set; }
+        [JsonProperty("Radius")] public float Radius { get; set; }
+        [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
         public int Hp { get; set; }
         public int ReceivedDamage { get; set; }
         public PlayerType Type { get; set; }
-        public bool PressedAttack { get; set; }
 
         [JsonIgnore] public bool IsDead => Hp <= 0;
-
-        public static PlayerData BasePlayerData => new PlayerData {
-            Id = Guid.NewGuid().ToString(),
-            Speed = 2f,
-            Radius = 0.5f,
-            Hp = 1000,
-            PressedAttack = false
-        };
     }
 }

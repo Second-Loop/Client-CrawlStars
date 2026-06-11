@@ -7,7 +7,10 @@ namespace Core.Player {
         [SerializeField] private StatusBar hpBar;
 
         public void Initialize(PlayerData playerData) {
+            // temp
+            if (playerData.Hp == 0) playerData.Hp = 2000;
             hpBar.Initialize(playerData.Hp);
+            MoveTo(playerData.Pos.ToVector2());
         }
         
         public void MoveTo(Vector3 position) {

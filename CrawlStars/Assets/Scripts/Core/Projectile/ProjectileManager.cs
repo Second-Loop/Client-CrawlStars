@@ -7,52 +7,42 @@ namespace Core.Projectile {
         private static ProjectileManager instance;
         public static ProjectileManager Instance => instance ??= new ProjectileManager();
 
-        private Dictionary<string, ProjectileListener> projectiles = new Dictionary<string, ProjectileListener>();
+        private Dictionary<string, ProjectileListener> projectileListeners = new Dictionary<string, ProjectileListener>();
 
-        public void UpdateProjectiles(List<ProjectileData> dataList) {
-            var willRemoveList = new List<ProjectileData>();
+        public void Initialize(IReadOnlyList<ProjectileData> dataList) {
+            ClearListener();
+        }
 
-            foreach (var data in dataList) {
-                if (!projectiles.TryGetValue(data.Id, out var projectile)!) {
-                    Debug.LogError($"ProjectileManager.UpdateProjectiles::Can not find {data.Id} from projectiles");
+        public void ApplySnapshot(IReadOnlyList<ProjectileData> projectiles) {
+            foreach (var projectile in projectiles) {
+                if (projectile == null || string.IsNullOrEmpty(projectile.Id)) continue;
+
+                if (!projectileListeners.TryGetValue(projectile.Id, out var listener)) {
+                    if (projectile.IsDestroyed) continue;
+
+                    // 살아있는데 없으면 새로 생겨난 것
+                    listener = ObjectPooling.Instance.Get<ProjectileListener>("Projectile");
+                    if (listener == null) continue;
+
+                    projectileListeners.Add(projectile.Id, listener);
+                }
+
+                if (projectile.IsDestroyed) {
+                    ObjectPooling.Instance.TryAbandon("Projectile", listener.gameObject);
+                    projectileListeners.Remove(projectile.Id);
                     continue;
                 }
 
-                if (data.IsDestroyed) {
-                    ObjectPooling.Instance.TryAbandon("Projectile", projectile.gameObject);
-                    willRemoveList.Add(data);
-                } else {
-                    projectile.MoveTo(data.Pos);
-                }
-            }
-
-            foreach (var data in willRemoveList) {
-                projectiles.Remove(data.Id);
-            }
-        }
-
-        public void Create(ProjectileData data) {
-            if (data == null) {
-                Debug.LogError($"ProjectileManager.Create::data is null");
-                return;
-            }
-
-            var projectile = ObjectPooling.Instance.Get<ProjectileListener>("Projectile");
-            if (projectile == null) return;
-
-            projectile.MoveTo(data.Pos);
-            projectile.RotateTo(data.Dir);
-
-            if (!projectiles.TryAdd(data.Id, projectile)) {
-                Debug.LogError($"ProjectileManager.Create::Can not add {data.Id} to projectiles. it already exists");
+                listener.MoveTo(projectile.Pos.ToVector2());
+                listener.RotateTo(projectile.Dir.ToVector2());
             }
         }
 
         public void ClearListener() {
-            foreach (var projectile in projectiles) {
+            foreach (var projectile in projectileListeners) {
                 ObjectPooling.Instance.TryAbandon("Projectile", projectile.Value.gameObject);
             }
-            projectiles.Clear();
+            projectileListeners.Clear();
         }
     }
 }

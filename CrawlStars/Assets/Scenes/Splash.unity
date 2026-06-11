@@ -734,7 +734,7 @@ GameObject:
   - component: {fileID: 1208131015}
   - component: {fileID: 1208131014}
   m_Layer: 0
-  m_Name: SImulator
+  m_Name: ClientGameLoop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -751,7 +751,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0fbbc4b9329a445daaf7fd6044733cdf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Simulator
+  m_EditorClassIdentifier: Assembly-CSharp::Core.Controller.ClientGameLoop
   inputProvider: {fileID: 62158352}
 --- !u!4 &1208131015
 Transform:
@@ -799,8 +799,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   mapRenderer: {fileID: 1694517780}
-  simulator: {fileID: 1208131014}
-  networkManager: {fileID: 1349206008}
+  clientGameLoop: {fileID: 1208131014}
 --- !u!4 &1305152185
 Transform:
   m_ObjectHideFlags: 0
@@ -1437,3 +1436,4 @@ SceneRoots:
   - {fileID: 921203010}
   - {fileID: 1670730429}
   - {fileID: 1143580324}
+  - {fileID: 1150000002}
