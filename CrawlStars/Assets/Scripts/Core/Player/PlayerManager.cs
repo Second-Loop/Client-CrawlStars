@@ -48,7 +48,7 @@ namespace Core.Player {
                     continue;
                 }
 
-                if (!player.IsDead) {
+                if (player.IsDead) {
                     ObjectPooling.Instance.TryAbandon(Constants.Player, listener.gameObject);
                     playerListeners.Remove(player.Id);
                     
