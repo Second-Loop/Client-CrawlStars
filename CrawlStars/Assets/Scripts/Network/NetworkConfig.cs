@@ -39,7 +39,7 @@ namespace Network {
         public string GetWebSocketUrl(string path) => $"{WebSocketUrl}{path}";
 
         private static string GetConfigPath() {
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", ConfigFileName));
+            return Path.Combine(Application.streamingAssetsPath, ConfigFileName);
         }
 
         private sealed class NetworkConfigFile {
