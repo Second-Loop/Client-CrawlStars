@@ -16,7 +16,7 @@ namespace Core.Map {
 
             for (int y = 0; y < mapData.height; ++y) {
                 for (int x = 0; x < mapData.width; ++x) {
-                    var obj = ObjectPooling.Instance.Get<Tile>("Tile", mapRoot);
+                    var obj = ObjectPooling.Instance.Get<Tile>(Constants.Tile, mapRoot);
                     if (obj == null) return;
 
                     var tileType = (Tile.TileType)mapData.map[y][x];
@@ -29,7 +29,7 @@ namespace Core.Map {
 
         public void Clear() {
             foreach (var tile in loadedTiles) {
-                ObjectPooling.Instance.TryAbandon("Tile", tile.gameObject);
+                ObjectPooling.Instance.TryAbandon(Constants.Tile, tile.gameObject);
             }
             loadedTiles.Clear();
         }

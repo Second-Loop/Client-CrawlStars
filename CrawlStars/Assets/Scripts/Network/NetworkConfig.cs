@@ -1,57 +1,49 @@
 using System;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Network {
     public class NetworkConfig {
         private const string ConfigFileName = "network_config.json";
 
         public string RestBaseUrl { get; private set; }
-        public string WebSocketUrlTemplate { get; private set; }
+        public string WebSocketUrl { get; private set; }
 
-        public static NetworkConfig Load() {
-            string configPath = GetConfigPath();
-
-            if (!File.Exists(configPath)) {
-                Debug.LogError($"NetworkConfig.Load::config file not found. using local defaults. path={configPath}");
-                return null;
-            }
-
+        public static async UniTask<NetworkConfig> LoadAsync() {
+            string configUrl = GetConfigUrl();
             try {
-                string json = File.ReadAllText(configPath);
+                using var request = UnityWebRequest.Get(configUrl);
+                await request.SendWebRequest();
+                if (request.result != UnityWebRequest.Result.Success) {
+                    Debug.LogError($"NetworkConfig.LoadAsync::failed to load config. url={configUrl}, error={request.error}");
+                    return null;
+                }
+
+                string json = request.downloadHandler.text;
                 var fileConfig = JsonConvert.DeserializeObject<NetworkConfigFile>(json);
-                return FromFileConfig(fileConfig);
+                
+                var config = new NetworkConfig();
+                if (!string.IsNullOrWhiteSpace(fileConfig?.RestBaseUrl)) {
+                    config.RestBaseUrl = fileConfig.RestBaseUrl.TrimEnd('/');
+                }
+                if (!string.IsNullOrWhiteSpace(fileConfig?.WebSocketUrl)) {
+                    config.WebSocketUrl = fileConfig.WebSocketUrl;
+                }
+                return config;
             } catch (Exception e) {
-                Debug.LogError($"NetworkConfig.Load::failed to load config. using local defaults. error={e.Message}");
+                Debug.LogError($"NetworkConfig.LoadAsync::failed to load config. {e.Message}");
                 return null;
             }
         }
 
-        private static NetworkConfig FromFileConfig(NetworkConfigFile fileConfig) {
-            var config = new NetworkConfig();
+        public string GetWebSocketUrl(string path) => $"{WebSocketUrl}{path}";
 
-            if (!string.IsNullOrWhiteSpace(fileConfig?.RestBaseUrl)) {
-                config.RestBaseUrl = fileConfig.RestBaseUrl.TrimEnd('/');
-            }
-
-            if (!string.IsNullOrWhiteSpace(fileConfig?.WebSocketUrlTemplate)) {
-                config.WebSocketUrlTemplate = fileConfig.WebSocketUrlTemplate;
-            } else if (!string.IsNullOrWhiteSpace(fileConfig?.WebSocketUrl)) {
-                config.WebSocketUrlTemplate = fileConfig.WebSocketUrl;
-            }
-
-            return config;
-        }
-
-        public string GetWebSocketUrl(string roomID, string playerID) {
-            return WebSocketUrlTemplate
-                .Replace("{roomID}", Uri.EscapeDataString(roomID))
-                .Replace("{playerID}", Uri.EscapeDataString(playerID));
-        }
-
-        private static string GetConfigPath() {
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", ConfigFileName));
+        private static string GetConfigUrl() {
+            string path = Path.Combine(Application.streamingAssetsPath, ConfigFileName);
+            return path.Contains("://") ? path : new Uri(path).AbsoluteUri;
         }
 
         private sealed class NetworkConfigFile {
@@ -60,9 +52,6 @@ namespace Network {
 
             [JsonProperty("websocketUrl")]
             public string WebSocketUrl { get; set; }
-
-            [JsonProperty("websocketUrlTemplate")]
-            public string WebSocketUrlTemplate { get; set; }
         }
     }
 }

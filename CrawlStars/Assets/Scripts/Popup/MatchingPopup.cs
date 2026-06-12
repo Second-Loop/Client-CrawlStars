@@ -3,6 +3,7 @@ using System.Threading;
 using Core.Player;
 using Cysharp.Threading.Tasks;
 using Managing;
+using Network;
 using UnityEngine;
 
 namespace Popup {
@@ -22,11 +23,11 @@ namespace Popup {
         private async UniTask StartMatching(CancellationToken ct) {
             float progress = 0f;
 
-            var matchTask = GameManager.Instance.MatchAsync(ct);
+            var matchTask = NetworkManager.Instance.MatchAsync(ct);
             while (!matchTask.GetAwaiter().IsCompleted) {
                 await UniTask.Delay(100);
                 if (ct.IsCancellationRequested) {
-                    GameManager.Instance.CancelMatch();
+                    await NetworkManager.Instance.DisconnectSocketAsync();
                     return;
                 }
 
@@ -38,7 +39,7 @@ namespace Popup {
                 // 예외 잡기용
                 await matchTask;
             } catch (Exception ex) {
-                GameManager.Instance.CancelMatch();
+                await NetworkManager.Instance.DisconnectSocketAsync();
                 if (ex is not OperationCanceledException) {
                     RequestPopupClosing();
                     Debug.LogError(ex);

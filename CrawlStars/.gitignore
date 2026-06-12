@@ -110,4 +110,4 @@ InitTestScene*.unity*
 .DS_Store
 
 # Local runtime network settings. Keep real server endpoints out of source.
-/network_config.json
+/Assets/StreamingAssets/network_config.json

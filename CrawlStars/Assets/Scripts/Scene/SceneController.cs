@@ -4,6 +4,7 @@ using Popup;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Utility;
+using Cache = Utility.Cache;
 
 namespace Managing {
     public class SceneController : SingletonMonoBehaviour<SceneController> {
@@ -74,7 +75,7 @@ namespace Managing {
                 Debug.LogError($"SceneController.ChangeSceneAdditive::failed unload {currentScene.name}");
             }
 
-            CommonCache.OnChangeScene();
+            Cache.OnChangeScene();
             afterActivateAction?.Invoke();
 
             loadingScreen.SetActive(false);

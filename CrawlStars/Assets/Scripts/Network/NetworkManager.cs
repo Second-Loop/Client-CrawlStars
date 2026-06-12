@@ -1,6 +1,9 @@
 using System;
+using System.Net;
 using System.Threading;
+using Core.Player;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Network {
@@ -8,21 +11,31 @@ namespace Network {
         private NetworkConfig config;
         private WebSocketClient socketClient;
         private string jwtAccessToken;
+        private UniTask initializationTask;
 
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
+        public bool IsMatched { get; private set; }
+
+        public event Action<SnapshotDto> SnapshotReceived;
 
         protected override void Awake() {
             base.Awake();
-            Initialize();
+            initializationTask = InitializeAsync().Preserve();
+            initializationTask.Forget();
         }
 
         private void Update() {
             socketClient?.DispatchMessageQueue();
         }
 
-        public void Initialize() {
-            config = NetworkConfig.Load();
+        private void OnApplicationQuit() {
+            socketClient?.Abort();
+            socketClient = null;
+        }
+
+        private async UniTask InitializeAsync() {
+            config = await NetworkConfig.LoadAsync();
             if (config != null) {
                 RestClient = new RestApiClient(config.RestBaseUrl);
             }
@@ -39,24 +52,27 @@ namespace Network {
             RestClient.SetJwtToken(accessToken);
         }
 
-        public void ConnectSocket(string roomID, string playerID) {
-            if (!IsInitialized || string.IsNullOrEmpty(roomID) || string.IsNullOrEmpty(playerID)) {
+        private async UniTask ConnectSocketAsync(string path, CancellationToken ct) {
+            if (!IsInitialized || string.IsNullOrEmpty(path)) {
                 Debug.LogError("NetworkManager.ConnectSocketAsync::not initialized or invalid parameter");
                 return;
             }
 
-            DisconnectSocket();
+            await DisconnectSocketAsync();
+            ct.ThrowIfCancellationRequested();
 
-            socketClient = new WebSocketClient(config.GetWebSocketUrl(roomID, playerID));
+            socketClient = new WebSocketClient(config.GetWebSocketUrl(path));
             RegisterSocketLogEvents(socketClient);
             socketClient.Connect(jwtAccessToken);
         }
 
-        public void DisconnectSocket() {
-            if (socketClient == null) return;
+        public UniTask DisconnectSocketAsync() {
+            if (socketClient == null) return UniTask.CompletedTask;
 
-            socketClient.Disconnect();
+            // 복사해서 사용하기 때문에 연달아서 Connect 해도 충돌 없음
+            var targetClient = socketClient;
             socketClient = null;
+            return targetClient.DisconnectAsync();
         }
 
         public async UniTask SendSocketJsonAsync<T>(T message) {
@@ -73,47 +89,68 @@ namespace Network {
             await socketClient.SendJsonAsync(message);
         }
 
-#region Test
-        private static void RegisterSocketLogEvents(WebSocketClient socketClient) {
+        public async UniTask<MatchDto> MatchAsync(CancellationToken ct) {
+            await initializationTask;
+            ct.ThrowIfCancellationRequested();
+            if (!IsInitialized) {
+                throw new InvalidOperationException("NetworkManager initialization failed.");
+            }
+
+            IsMatched = false;
+            MatchDto dto = await RestClient.PostAsync<object, MatchDto>("matchmaking/join", null);
+            if (dto == null) {
+                Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
+                throw new WebException("matchmaking response is null");
+            }
+            Debug.Log($"Room Id: {dto.Room.Id}, Status: {dto.Room.Status}, MaxPlayers: {dto.Room.MaxPlayers}");
+            Debug.Log($"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
+            PlayerManager.Instance.MyId = dto.Player.Id;
+            ct.ThrowIfCancellationRequested();
+
+            // 방 입장
+            await ConnectSocketAsync(dto.WebSocketPath, ct);
+            ct.ThrowIfCancellationRequested();
+
+            // 다른 유저 기다리기
+            await UniTask.WaitUntil(() => IsMatched, cancellationToken: ct);
+            return dto;
+        }
+
+        private void RegisterSocketLogEvents(WebSocketClient socketClient) {
             socketClient.Opened += () => Debug.Log("WebSocket OnOpen");
             socketClient.MessageReceived += message => Debug.Log($"WebSocket Message: {message}");
             socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
             socketClient.Closed += closeCode => Debug.Log($"WebSocket Closed: {closeCode}");
+
+            socketClient.Closed += closeCode => IsMatched = false;
+            socketClient.MessageReceived += HandleSocketMessage;
         }
 
-        public async UniTask<NetworkTestSession> TestRestApiAsync(CancellationToken ct) {
-            // 1. 서버 상태 받아오기
-            // HealthResponse health = await Rest.GetAsync<HealthResponse>("health");
-            // Debug.Log($"REST Health: status={health.Status}, service={health.Service}");
-
-            // 2. 방 리스트 받아오기
-            // RoomListResponse roomList = await Rest.GetAsync<RoomListResponse>("rooms");
-            // Debug.Log($"REST Rooms: count={roomList?.Rooms?.Length ?? 0}");
-
-            // 3. 방 만들기: 여기서 방 Id 받음
-            RoomResponse createdRoom = await RestClient.PostAsync<object, RoomResponse>("rooms", null);
-            if (string.IsNullOrEmpty(createdRoom?.Id)) {
-                throw new InvalidOperationException("REST CreateRoom failed: room id is empty.");
+        private void HandleSocketMessage(string message) {
+            try {
+                var envelope = JsonConvert.DeserializeObject<MessageEnvelope>(message);
+                switch (envelope?.Type) {
+                    case "snapshot":
+                        var snapshotMessage = JsonConvert.DeserializeObject<SnapshotMessageDto>(message);
+                        if (snapshotMessage?.Snapshot == null) {
+                            Debug.LogWarning($"NetworkManager.HandleSocketMessage::message snapshot is null");
+                            return;
+                        }
+                        SnapshotReceived?.Invoke(snapshotMessage.Snapshot);
+                        IsMatched = true;
+                        break;
+                    case "error":
+                        var errorMessage = JsonConvert.DeserializeObject<ErrorMessageDto>(message);
+                        Debug.LogError($"WebSocket API Error: {errorMessage?.Error?.Code}/{errorMessage?.Error?.Message}");
+                        break;
+                }
+            } catch (JsonException e) {
+                Debug.LogError($"NetworkManager.HandleSocketMessage::invalid message/{e.Message}");
             }
-            Debug.Log($"REST CreateRoom: id={createdRoom.Id}, status={createdRoom.Status}");
-            ct.ThrowIfCancellationRequested();
-
-            // 4. 플레이어 방에 참가시키기: 여기서 플레이어 Id 받음
-            PlayerResponse player = await RestClient.PostAsync<object, PlayerResponse>($"rooms/{createdRoom.Id}/players", null);
-            Debug.Log($"REST CreateRoomPlayer: id={player.Id}, team={player.Team}, slot={player.Slot}");
-            ct.ThrowIfCancellationRequested();
-
-            // 5. 방 상태 받아오기
-            // RoomResponse room = await Rest.GetAsync<RoomResponse>($"rooms/{createdRoom.Id}");
-            // Debug.Log($"REST GetRoom: id={room.Id}, status={room.Status}, players={room.Players?.Length ?? 0}");
-
-            // 6. 방 시작하기
-            RoomResponse startedRoom = await RestClient.PostAsync<object, RoomResponse>($"rooms/{createdRoom.Id}/start", null);
-            Debug.Log($"REST StartRoom: id={startedRoom.Id}, status={startedRoom.Status}, tick={startedRoom.LatestSnapshot?.Tick ?? 0}");
-            ct.ThrowIfCancellationRequested();
-
-            return new NetworkTestSession(createdRoom.Id, player.Id);
         }
-#endregion
+
+        private sealed class MessageEnvelope {
+            [JsonProperty("Type")] public string Type { get; set; }
+        }
     }
 }

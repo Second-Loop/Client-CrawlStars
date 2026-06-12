@@ -17,12 +17,12 @@ public class StatusBar : MonoBehaviour {
         progressText.text = maxValue.ToString();
     }
 
-    public void SetValue(int from, int to) {
-        progressText.text = to.ToString();
-        barBg.fillAmount = from / (float)maxValue;
-
+    public void 행(int to) {
         float toPercent = to / (float)maxValue;
+        if (Mathf.Approximately(toPercent, barImage.fillAmount)) return;
+
         barImage.fillAmount = toPercent;
+        progressText.text = to.ToString();
 
         barBg.DOFillAmount(toPercent, 0.5f);
     }

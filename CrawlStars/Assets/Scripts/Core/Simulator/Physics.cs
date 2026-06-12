@@ -4,6 +4,7 @@ using Core.Player;
 using Core.Projectile;
 using UnityEngine;
 
+/*
 namespace Core.Simulator {
     public static class Physics {
         public static void MovePlayer(PlayerData target, List<PlayerData> players) {
@@ -94,3 +95,4 @@ namespace Core.Simulator {
         }
     }
 }
+*/
