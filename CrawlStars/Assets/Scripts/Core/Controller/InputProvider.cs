@@ -1,5 +1,6 @@
 using UnityEngine;
 using Utility;
+using Cache = Utility.Cache;
 
 namespace Core.Controller {
     public class InputProvider : MonoBehaviour {
@@ -17,7 +18,7 @@ namespace Core.Controller {
             // 조준
             if (Input.GetKey(KeyCode.Mouse0)) {
                 var mouseWorldPos = GetMouseWorldPos();
-                AimDirection = (mouseWorldPos - (Vector2)CommonCache.MainCamera.transform.position).normalized;
+                AimDirection = (mouseWorldPos - (Vector2)Cache.MainCamera.transform.position).normalized;
             }
 
             // 발사
@@ -49,8 +50,8 @@ namespace Core.Controller {
 
         private Vector2 GetMouseWorldPos() {
             Vector3 mouseScreenPos = Input.mousePosition;
-            mouseScreenPos.z = -CommonCache.MainCamera.transform.position.z;
-            return CommonCache.MainCamera.ScreenToWorldPoint(mouseScreenPos);
+            mouseScreenPos.z = -Cache.MainCamera.transform.position.z;
+            return Cache.MainCamera.ScreenToWorldPoint(mouseScreenPos);
         }
     }
 }

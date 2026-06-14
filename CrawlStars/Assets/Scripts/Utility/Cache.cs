@@ -2,7 +2,7 @@ using CameraControl;
 using UnityEngine;
 
 namespace Utility {
-    public static class CommonCache {
+    public static class Cache {
         private static Camera mainCamera;
         public static Camera MainCamera => mainCamera ??= Camera.main;
 

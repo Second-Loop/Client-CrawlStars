@@ -4,7 +4,7 @@ using Core.Player;
 using Core.Projectile;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-
+/*
 namespace Core.Simulator {
     // 나중에 클라에서도 tick 을 계산해야 하기에 서버로 이주 후에는 이름을 TickManager로 바꾸기
     public class Simulator : MonoBehaviour {
@@ -176,3 +176,4 @@ namespace Core.Simulator {
         }
     }
 }
+*/
