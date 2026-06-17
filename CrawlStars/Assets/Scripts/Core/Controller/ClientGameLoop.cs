@@ -9,10 +9,11 @@ namespace Core.Controller {
     public class ClientGameLoop : MonoBehaviour {
         [SerializeField] private InputProvider inputProvider;
 
+        public Action<Vector2, Vector2> OnReceivedInput;
+        private SnapshotDto latestSnapshot;
         private float accumulator;
         private bool isActive;
         private bool isInitialized;
-        private SnapshotDto latestSnapshot;
 
         private const int InputRate = 30;
         private const float InputInterval = 1f / InputRate;
@@ -73,6 +74,7 @@ namespace Core.Controller {
         private UniTask SendInputAsync() {
             Vector2 moveDirection = inputProvider.GetMoveDirection();
             Vector2 attackDirection = inputProvider.CaptureAttackDirection();
+            OnReceivedInput?.Invoke(moveDirection, attackDirection);
 
             return NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
                 MoveDir = new Vector2Dto(moveDirection),
