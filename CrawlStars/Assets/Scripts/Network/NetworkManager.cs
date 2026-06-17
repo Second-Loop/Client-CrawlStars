@@ -102,8 +102,8 @@ namespace Network {
                 Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
                 throw new WebException("matchmaking response is null");
             }
-            Debug.Log($"Room Id: {dto.Room.Id}, Status: {dto.Room.Status}, MaxPlayers: {dto.Room.MaxPlayers}");
-            Debug.Log($"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
+            Debug.Log($"Room Id: {dto.Room.Id}, Status: {dto.Room.Status}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
+                      $"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
             PlayerManager.Instance.MyId = dto.Player.Id;
             ct.ThrowIfCancellationRequested();
 
@@ -118,7 +118,7 @@ namespace Network {
 
         private void RegisterSocketLogEvents(WebSocketClient socketClient) {
             socketClient.Opened += () => Debug.Log("WebSocket OnOpen");
-            socketClient.MessageReceived += message => Debug.Log($"WebSocket Message: {message}");
+            // socketClient.MessageReceived += message => Debug.Log($"WebSocket Message: {message}");
             socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
             socketClient.Closed += closeCode => Debug.Log($"WebSocket Closed: {closeCode}");
 
