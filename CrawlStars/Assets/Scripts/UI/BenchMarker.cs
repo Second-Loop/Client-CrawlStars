@@ -15,13 +15,14 @@ public class BenchMarker : MonoBehaviour {
     [SerializeField] private Image mouse;
     [SerializeField] private TextMeshProUGUI latencyText;
     [SerializeField] private TextMeshProUGUI lossText;
+    [SerializeField] private Image effect;
     
     private readonly Queue<double> inputQue = new Queue<double>();
     private int inputCount = 0;
-    private int receiveCount = 0;
+    private int lostCount = 0;
     
     private const float ColorDuration = 0.3f;
-    private const float LossThreadHold = 3000f;
+    private const float LossThreshold = 3000f;
 
     public void OnPressKey(Vector2 moveDir, Vector2 attackDir) {
         if (moveDir == Vector2.zero && attackDir == Vector2.zero) return;
@@ -39,23 +40,50 @@ public class BenchMarker : MonoBehaviour {
     }
 
     public void OnReceiveSnapshot(SnapshotDto snapshot) {
-        var me = snapshot.Players.First(data => data.Id == PlayerManager.Instance.MyId);
-        if (me.MoveDir.ToVector2() == Vector2.zero && me.AttackDir.ToVector2() == Vector2.zero) return;
-
-        ++receiveCount;
-        if (inputQue.Count == 0) return;
-
-        var time = inputQue.Dequeue();
-        double elapsedMs = (Time.realtimeSinceStartupAsDouble - time) * 1000.0;
-
-        while (inputQue.Count > 0 && elapsedMs >= LossThreadHold) {
-            ++receiveCount;
-            time = inputQue.Dequeue();
-            elapsedMs = (Time.realtimeSinceStartupAsDouble - time) * 1000.0;
+        if (snapshot?.Players == null) {
+            Debug.LogWarning("BenchMark.OnReceiveSnapshot::snapshot players is null");
+            return;
         }
 
+        var me = snapshot.Players.FirstOrDefault(data => data.Id == PlayerManager.Instance.MyId);
+        if (me == null) {
+            Debug.LogError("BenchMark.OnReceiveSnapshot::Can not find my data in snapshot");
+            return;
+        }
+
+        double elapsedMs = -1.0;
+        bool isLost = false;
+
+        while (inputQue.Count > 0) {
+            var inputTime = inputQue.Peek();
+            elapsedMs = (Time.realtimeSinceStartupAsDouble - inputTime) * 1000.0;
+            if (elapsedMs < LossThreshold) break;
+
+            inputQue.Dequeue();
+            ++lostCount;
+            isLost = true;
+        }
+
+        if (isLost) {
+            effect.DOKill();
+            effect.color = Color.red;
+            effect.DOFade(0f, ColorDuration);
+        }
+
+        UpdateLossText();
+
+        if (elapsedMs < 0 || 
+            me.MoveDir.ToVector2() == Vector2.zero && me.AttackDir.ToVector2() == Vector2.zero) return;
+
+        inputQue.Dequeue();
+
         latencyText.text = $"{elapsedMs:F2} ms"; 
-        lossText.text = $"{(1 - receiveCount / (float)inputCount) * 100:F1} %";
+        UpdateLossText();
+    }
+
+    private void UpdateLossText() {
+        float lossRate = inputCount == 0 ? 0f : lostCount / (float)inputCount * 100f;
+        lossText.text = $"{lossRate:F2} %";
     }
 
     private static void TurnRedToWhite(Image target) {
