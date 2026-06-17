@@ -72,7 +72,7 @@ public class BenchMarker : MonoBehaviour {
 
         UpdateLossText();
 
-        if (elapsedMs < 0 || 
+        if (inputQue.Count == 0 || elapsedMs < 0 || 
             me.MoveDir.ToVector2() == Vector2.zero && me.AttackDir.ToVector2() == Vector2.zero) return;
 
         inputQue.Dequeue();
