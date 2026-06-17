@@ -1,3 +1,4 @@
+using System;
 using Core.Controller;
 using Core.Map;
 using Core.Player;
@@ -26,6 +27,9 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         ProjectileManager.Instance.ClearListener();
         NetworkManager.Instance.DisconnectSocketAsync().Forget();
     }
+
+    public void RegisterInputAction(Action<Vector2, Vector2> callback) => clientGameLoop.OnReceivedInput += callback;
+    public void UnregisterInputAction(Action<Vector2, Vector2> callback) => clientGameLoop.OnReceivedInput -= callback;
 
     public async UniTask EndGameAsync(bool didWin) {
         clientGameLoop.SetActive(false);

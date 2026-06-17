@@ -1,11 +1,25 @@
 using Cysharp.Threading.Tasks;
 using Managing;
+using Network;
 using Popup;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scene {
     public class PlaySceneHandler : BaseSceneHandler {
+        [SerializeField] private BenchMarker benchMarker;
+
+        protected override void Start() {
+            base.Start();
+            GameManager.Instance.RegisterInputAction(benchMarker.OnPressKey);
+            NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
+        }
+
+        private void OnDestroy() {
+            GameManager.Instance.UnregisterInputAction(benchMarker.OnPressKey);
+            NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
+        }
+
         protected override async UniTask ClickLeaveInternal() {
             GameManager.Instance.SetActiveInput(false);
 
