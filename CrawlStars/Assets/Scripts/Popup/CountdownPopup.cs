@@ -1,3 +1,4 @@
+using System;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
@@ -42,8 +43,10 @@ namespace Popup {
             countdownText.text = $"{countdownSeconds} seconds..";
             countdownGroup.gameObject.SetActive(true);
 
-            for (int i = countdownSeconds; i > 0; --i) {
-                countdownText.text = $"{i} seconds..";
+            DateTime endTime = DateTime.UtcNow.AddSeconds(countdownSeconds);
+            while (DateTime.UtcNow < endTime) {
+                int remainingSeconds = Mathf.CeilToInt((float)(endTime - DateTime.UtcNow).TotalSeconds);
+                countdownText.text = $"{remainingSeconds} seconds..";
                 await UniTask.Delay(DelayMilliSeconds);
             }
 
