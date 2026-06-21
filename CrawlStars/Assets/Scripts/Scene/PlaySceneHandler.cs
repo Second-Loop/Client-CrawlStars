@@ -8,16 +8,21 @@ using UnityEngine.UI;
 namespace Scene {
     public class PlaySceneHandler : BaseSceneHandler {
         [SerializeField] private BenchMarker benchMarker;
+        [SerializeField] private GameObject waitingCurtain;
 
         protected override void Start() {
             base.Start();
             GameManager.Instance.RegisterInputAction(benchMarker.OnPressKey);
             NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
+            NetworkManager.Instance.SnapshotReceived += HideWaitingCurtain;
+            
+            waitingCurtain.SetActive(true);
         }
 
         private void OnDestroy() {
             GameManager.Instance.UnregisterInputAction(benchMarker.OnPressKey);
             NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
+            NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
         }
 
         protected override async UniTask ClickLeaveInternal() {
@@ -32,6 +37,13 @@ namespace Scene {
 
             GameManager.Instance.SetActiveInput(true);
             isClickedLeave = false;
+        }
+
+        private void HideWaitingCurtain(SnapshotDto snapshot) {
+            if (snapshot.Status != "starting") return;
+
+            waitingCurtain.SetActive(false);
+            NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
         }
     }
 }

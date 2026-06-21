@@ -11,7 +11,8 @@ namespace Popup {
         private readonly List<KeyValuePair<string, PopupHandler>> popupList =
             new List<KeyValuePair<string, PopupHandler>>();
         
-        public bool HasOpenPopup => popupList.Count > 0;
+        public bool HasOpenedPopup => popupList.Count > 0;
+        public bool CanCloseTopWithEsc => HasOpenedPopup && popupList[^1].Value.CanCloseWithEsc;
 
         public async UniTask<PopupHandler.Result> ShowAsync(string name, PopupHandler.Param param = null) {
             var resource = Resources.Load<PopupHandler>(name);

@@ -12,6 +12,7 @@ namespace Network {
         private WebSocketClient socketClient;
         private string jwtAccessToken;
         private UniTask initializationTask;
+        private ReadyEventMessageDto matchedReadyEvent;
 
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
@@ -89,7 +90,9 @@ namespace Network {
             await socketClient.SendJsonAsync(message);
         }
 
-        public async UniTask<MatchDto> MatchAsync(CancellationToken ct) {
+        public UniTask SendReadyAckAsync() => SendSocketJsonAsync(new ReadyAckMessageDto());
+
+        public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
             await initializationTask;
             ct.ThrowIfCancellationRequested();
             if (!IsInitialized) {
@@ -97,12 +100,13 @@ namespace Network {
             }
 
             IsMatched = false;
+            matchedReadyEvent = null;
             MatchDto dto = await RestClient.PostAsync<object, MatchDto>("matchmaking/join", null);
             if (dto == null) {
                 Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
                 throw new WebException("matchmaking response is null");
             }
-            Debug.Log($"Room Id: {dto.Room.Id}, Status: {dto.Room.Status}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
+            Debug.Log($"Room Id: {dto.Room.Id}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
                       $"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
             PlayerManager.Instance.MyId = dto.Player.Id;
             ct.ThrowIfCancellationRequested();
@@ -113,23 +117,33 @@ namespace Network {
 
             // 다른 유저 기다리기
             await UniTask.WaitUntil(() => IsMatched, cancellationToken: ct);
-            return dto;
+            return matchedReadyEvent;
         }
 
         private void RegisterSocketLogEvents(WebSocketClient socketClient) {
             socketClient.Opened += () => Debug.Log("WebSocket OnOpen");
-            // socketClient.MessageReceived += message => Debug.Log($"WebSocket Message: {message}");
-            socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
-            socketClient.Closed += closeCode => Debug.Log($"WebSocket Closed: {closeCode}");
-
-            socketClient.Closed += closeCode => IsMatched = false;
             socketClient.MessageReceived += HandleSocketMessage;
+            socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
+            socketClient.Closed += closeCode => {
+                IsMatched = false;
+                matchedReadyEvent = null;
+                Debug.Log($"WebSocket Closed: {closeCode}");
+            };
         }
 
         private void HandleSocketMessage(string message) {
             try {
                 var envelope = JsonConvert.DeserializeObject<MessageEnvelope>(message);
                 switch (envelope?.Type) {
+                    case "Ready":   // 모든 유저 매칭됨
+                        var readyEvent = JsonConvert.DeserializeObject<ReadyEventMessageDto>(message);
+                        if (readyEvent?.Map == null || readyEvent.Players == null) {
+                            Debug.LogWarning("NetworkManager.HandleSocketMessage::ready event data is null");
+                            return;
+                        }
+                        matchedReadyEvent = readyEvent;
+                        IsMatched = true;
+                        break;
                     case "snapshot":
                         var snapshotMessage = JsonConvert.DeserializeObject<SnapshotMessageDto>(message);
                         if (snapshotMessage?.Snapshot == null) {
@@ -137,7 +151,6 @@ namespace Network {
                             return;
                         }
                         SnapshotReceived?.Invoke(snapshotMessage.Snapshot);
-                        IsMatched = true;
                         break;
                     case "error":
                         var errorMessage = JsonConvert.DeserializeObject<ErrorMessageDto>(message);

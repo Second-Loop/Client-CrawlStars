@@ -15,13 +15,23 @@ namespace Network {
         [JsonProperty("id")] public string Id { get; set; }
         [JsonProperty("players")] public PlayerDto[] Players { get; set; }
         [JsonProperty("maxPlayers")] public int MaxPlayers { get; set; }
-        [JsonProperty("map")] public MapData Map { get; set; }
     }
 
-    public class StatusDto {
+    public class ReadyEventMessageDto {
         [JsonProperty("Type")] public string Type { get; set; }
-        [JsonProperty("Type")] public string Status { get; set; }
-        [JsonProperty("Snapshot")] public SnapshotDto Snapshot { get; set; }
+        [JsonProperty("Map")] public MapData Map { get; set; }
+        [JsonProperty("Players")] public ReadyPlayerDto[] Players { get; set; }
+    }
+
+    public class ReadyPlayerDto {
+        [JsonProperty("Id")] public string Id { get; set; }
+        [JsonProperty("Team")] public string Team { get; set; }
+        [JsonProperty("Slot")] public int Slot { get; set; }
+        [JsonProperty("SpawnPosition")] public Vector2Dto SpawnPosition { get; set; }
+    }
+
+    public class ReadyAckMessageDto {
+        [JsonProperty("Type")] public string Type => "ready";
     }
 
     public class SnapshotMessageDto {
@@ -40,6 +50,8 @@ namespace Network {
     }
 
     public class SnapshotDto {
+        [JsonProperty("status")] public string Status { get; set; }
+        [JsonProperty("countdown")] public int? Countdown { get; set; }
         [JsonProperty("Tick")] public int Tick { get; set; }
         [JsonProperty("Players")] public PlayerData[] Players { get; set; }
         [JsonProperty("Projectiles")] public ProjectileData[] Projectiles { get; set; }

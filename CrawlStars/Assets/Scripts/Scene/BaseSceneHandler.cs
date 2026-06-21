@@ -18,8 +18,10 @@ namespace Scene {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
             if (SceneController.Instance.IsChanging) return;
 
-            if (PopupManager.Instance.HasOpenPopup) {
-                PopupManager.Instance.CloseTop();
+            if (PopupManager.Instance.HasOpenedPopup) {
+                if (PopupManager.Instance.CanCloseTopWithEsc) {
+                    PopupManager.Instance.CloseTop();
+                }
             } else {
                 ClickLeaveInternal().Forget();
             }

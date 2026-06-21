@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Core.Player;
 using Core.Projectile;
 using Cysharp.Threading.Tasks;
 using Network;
+using Popup;
 using UnityEngine;
 
 namespace Core.Controller {
@@ -10,7 +12,6 @@ namespace Core.Controller {
         [SerializeField] private InputProvider inputProvider;
 
         public Action<Vector2, Vector2> OnReceivedInput;
-        private SnapshotDto latestSnapshot;
         private float accumulator;
         private bool isActive;
         private bool isInitialized;
@@ -36,16 +37,16 @@ namespace Core.Controller {
             }
         }
 
-        public bool Initialize() {
+        public bool Initialize(IReadOnlyList<ReadyPlayerDto> players) {
             if (isInitialized) return false;
 
-            if (latestSnapshot == null || latestSnapshot.Players == null) {
-                Debug.LogError("ClientGameLoop.Initialize::snapshot is not received.");
+            if (players == null) {
+                Debug.LogError("ClientGameLoop.Initialize::ready players are null.");
                 return false;
             }
 
-            PlayerManager.Instance.Initialize(latestSnapshot.Players);
-            ProjectileManager.Instance.Initialize(latestSnapshot.Projectiles);
+            PlayerManager.Instance.Initialize(players);
+            ProjectileManager.Instance.Initialize();
             isInitialized = true;
             return true;
         }
@@ -68,7 +69,6 @@ namespace Core.Controller {
             SetActive(false);
             accumulator = 0;
             isInitialized = false;
-            latestSnapshot = null;
         }
 
         private UniTask SendInputAsync() {
@@ -84,20 +84,34 @@ namespace Core.Controller {
         }
 
         private void HandleSnapshot(SnapshotDto snapshot) {
-            latestSnapshot = snapshot;
-
-            if (!isInitialized || !isActive) {
+            if (!isInitialized) {
                 Debug.LogWarning("ClientGameLoop.HandleSnapshot::Not initialized.");
                 return;
             }
 
-            if (snapshot.Players == null || snapshot.Projectiles == null) {
-                Debug.LogWarning($"ClientGameLoop.HandleSnapshot::Data of snapshot is null/{snapshot.Players}/{snapshot.Projectiles}");
+            switch (snapshot.Status) {
+                case "starting":
+                    var param = new CountdownPopup.Param(snapshot.Countdown);
+                    PopupManager.Instance.ShowAsync(nameof(CountdownPopup), param).Forget();
+                    return;
+                case "started":
+                    break;
+                default:
+                    Debug.LogWarning($"ClientGameLoop.HandleSnapshot::unknown status/{snapshot.Status}");
+                    return;
+            }
+
+            if (snapshot.Players == null) {
+                Debug.LogWarning("ClientGameLoop.HandleSnapshot::snapshot players are null");
                 return;
             }
 
             PlayerManager.Instance.ApplySnapshot(snapshot.Players);
-            ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles);
+            ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
+
+            if (!isActive) {
+                SetActive(true);
+            }
         }
     }
 }

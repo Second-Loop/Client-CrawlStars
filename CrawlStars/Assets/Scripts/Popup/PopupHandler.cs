@@ -15,6 +15,8 @@ namespace Popup {
         [SerializeField] protected Button quitButton;
         [SerializeField] protected Button okButton;
 
+        public virtual bool CanCloseWithEsc => true;
+
         private UniTaskCompletionSource<Result> tcs;
 
         protected virtual void Awake() {
