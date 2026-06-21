@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CameraControl;
 using Cysharp.Threading.Tasks;
+using Network;
 using UnityEngine;
 using Utility;
 using Cache = Utility.Cache;
@@ -15,7 +16,7 @@ namespace Core.Player {
         
         public string MyId { get; set; }
 
-        public void Initialize(IReadOnlyList<PlayerData> players) {
+        public void Initialize(IReadOnlyList<ReadyPlayerDto> players) {
             ClearListeners();
 
             foreach (var player in players) {

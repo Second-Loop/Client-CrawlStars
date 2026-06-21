@@ -1,3 +1,4 @@
+using Network;
 using UnityEngine;
 using Utility;
 
@@ -6,9 +7,22 @@ namespace Core.Player {
         [SerializeField] private Transform body;
         [SerializeField] private StatusBar hpBar;
 
-        public void Initialize(PlayerData playerData) {
-            hpBar.Initialize(playerData.Hp);
-            MoveTo(playerData.Pos.ToVector2());
+        private bool isStatusInitialized;
+
+        public void Initialize(ReadyPlayerDto playerData) {
+            isStatusInitialized = false;
+            MoveTo(playerData.SpawnPosition.ToVector2());
+        }
+
+        public void ApplyStatus(float hp) {
+            int roundedHp = Mathf.RoundToInt(hp);
+            if (!isStatusInitialized) {
+                hpBar.Initialize(roundedHp);
+                isStatusInitialized = true;
+                return;
+            }
+
+            hpBar.MoveValue(roundedHp);
         }
         
         public void MoveTo(Vector3 position) {
@@ -29,8 +43,8 @@ namespace Core.Player {
             // attack to dir
         }
 
-        public void BeingHit(int hp) {
-            hpBar.MoveValue(hp);
+        public void BeingHit(float hp) {
+            ApplyStatus(hp);
         }
     }
 }

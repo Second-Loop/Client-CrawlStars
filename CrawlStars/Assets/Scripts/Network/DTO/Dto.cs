@@ -1,3 +1,4 @@
+using Core.Map;
 using Newtonsoft.Json;
 using Core.Player;
 using Core.Projectile;
@@ -12,10 +13,25 @@ namespace Network {
 
     public class RoomDto {
         [JsonProperty("id")] public string Id { get; set; }
-        [JsonProperty("status")] public string Status { get; set; }
         [JsonProperty("players")] public PlayerDto[] Players { get; set; }
         [JsonProperty("maxPlayers")] public int MaxPlayers { get; set; }
-        [JsonProperty("latestSnapshot")] public SnapshotDto LatestSnapshot { get; set; }
+    }
+
+    public class ReadyEventMessageDto {
+        [JsonProperty("Type")] public string Type { get; set; }
+        [JsonProperty("Map")] public MapData Map { get; set; }
+        [JsonProperty("Players")] public ReadyPlayerDto[] Players { get; set; }
+    }
+
+    public class ReadyPlayerDto {
+        [JsonProperty("Id")] public string Id { get; set; }
+        [JsonProperty("Team")] public string Team { get; set; }
+        [JsonProperty("Slot")] public int Slot { get; set; }
+        [JsonProperty("SpawnPosition")] public Vector2Dto SpawnPosition { get; set; }
+    }
+
+    public class ReadyAckMessageDto {
+        [JsonProperty("Type")] public string Type => "ready";
     }
 
     public class SnapshotMessageDto {
@@ -34,6 +50,8 @@ namespace Network {
     }
 
     public class SnapshotDto {
+        [JsonProperty("status")] public string Status { get; set; }
+        [JsonProperty("countdown")] public int? Countdown { get; set; }
         [JsonProperty("Tick")] public int Tick { get; set; }
         [JsonProperty("Players")] public PlayerData[] Players { get; set; }
         [JsonProperty("Projectiles")] public ProjectileData[] Projectiles { get; set; }
@@ -42,7 +60,7 @@ namespace Network {
     public class PlayerDto {
         [JsonProperty("id")] public string Id { get; set; }
         [JsonProperty("team")] public string Team { get; set; }
-        [JsonProperty("slot")] public int Slot { get; set; }
+        [JsonProperty("slot")] public int Slot { get; set; } // 순서
     }
 
     public class InputMessageDto {

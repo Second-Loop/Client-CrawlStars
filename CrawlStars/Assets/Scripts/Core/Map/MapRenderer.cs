@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Utility;
@@ -8,9 +9,11 @@ namespace Core.Map {
 
         private List<Tile> loadedTiles = new List<Tile>();
 
-        public void Render(int mapIndex) {
-            var mapData = MapLoader.GetMapData(mapIndex);
-            if (mapData == null) return;
+        public void Render(MapData mapData) {
+            if (mapData == null) {
+                Debug.LogError("MapRenderer.Render::mapData is null");
+                throw new ArgumentNullException();
+            }
 
             Vector2 startPos = MapHelper.GetMapStartPos(mapData);
 

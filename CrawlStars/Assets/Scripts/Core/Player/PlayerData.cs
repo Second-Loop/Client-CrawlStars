@@ -15,10 +15,9 @@ namespace Core.Player {
         [JsonProperty("AttackDir")] public Vector2Dto AttackDir { get; set; }
         [JsonProperty("Speed")] public float Speed { get; set; }
         [JsonProperty("Radius")] public float Radius { get; set; }
+        [JsonProperty("HP")] public float Hp { get; set; }
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
-        public int Hp { get; set; }
+        [JsonProperty("IsDead")] public bool IsDead { get; set; }
         public PlayerType Type { get; set; }
-
-        [JsonIgnore] public bool IsDead => Hp <= 0;
     }
 }

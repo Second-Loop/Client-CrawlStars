@@ -13,11 +13,14 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     [SerializeField] private MapRenderer mapRenderer;
     [SerializeField] private ClientGameLoop clientGameLoop;
 
-    public void Initialize() {
-        mapRenderer.Render(0);
-        if (clientGameLoop.Initialize()) {
-            clientGameLoop.SetActive(true);
-        }
+    public void Initialize(ReadyEventMessageDto readyEvent) {
+        mapRenderer.Render(readyEvent.Map);
+        clientGameLoop.Initialize(readyEvent.Players);
+    }
+
+    public void OnEnterPlayScene() {
+        PlayerManager.Instance.FocusCamera();
+        NetworkManager.Instance.SendReadyAckAsync().Forget();
     }
 
     public void Dispose() {

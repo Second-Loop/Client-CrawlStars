@@ -9,7 +9,7 @@ namespace Core.Projectile {
 
         private Dictionary<string, ProjectileListener> projectileListeners = new Dictionary<string, ProjectileListener>();
 
-        public void Initialize(IReadOnlyList<ProjectileData> dataList) {
+        public void Initialize() {
             ClearListener();
         }
 
