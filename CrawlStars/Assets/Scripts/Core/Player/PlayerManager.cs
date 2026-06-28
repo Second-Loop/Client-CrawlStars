@@ -10,8 +10,9 @@ namespace Core.Player {
         private static PlayerManager instance;
         public static PlayerManager Instance => instance ??= new PlayerManager();
 
-        private Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
-        private PlayerListener myListener;
+        // 임시 public
+        public readonly Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
+        public PlayerListener myListener;
         
         public string MyId { get; set; }
 
