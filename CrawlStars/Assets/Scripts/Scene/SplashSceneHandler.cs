@@ -1,5 +1,7 @@
+using Core;
 using Cysharp.Threading.Tasks;
 using Managing;
+using Network;
 using UnityEngine;
 
 namespace Scene {
@@ -11,7 +13,13 @@ namespace Scene {
         }
 
         private void Start() {
-            SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName).Forget();
+            InitializeAsync().Forget();
+        }
+
+        private async UniTask InitializeAsync() {
+            await GameConfig.LoadAsync();
+
+            await SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName);
         }
     }
 }
