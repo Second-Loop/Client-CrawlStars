@@ -18,6 +18,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     public bool IsBotModeActivated = false;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
+        MapLoader.SetCachedMapData(readyEvent.Map);
         mapRenderer.Render(readyEvent.Map);
         clientGameLoop.Initialize(readyEvent.Players);
         NetworkManager.Instance.GameEndReceived += HandleGameEnd;

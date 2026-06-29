@@ -25,7 +25,8 @@ namespace Core.Simulator {
         private readonly Dictionary<string, Vector2> prevProjectilePositions = new Dictionary<string, Vector2>();
 
         private const float AttackRange = 5f;
-        private const float RetreatHpThreshold = 0.3f;
+        private const float RetreatHpThreshold = 0.2f;
+        private const float RetreatDistance = 6f;
         private const float ProjectileLookAheadDistance = 8f;
         private const float DodgeMargin = 0.35f;
         private readonly float DangerRadius = GameConfig.PlayerRadius + GameConfig.ProjectileRadius + DodgeMargin;
@@ -78,7 +79,9 @@ namespace Core.Simulator {
             if (ShouldRetreat(curMe)) {
                 state = State.Retreat;
                 StoreProjectilePositions(curProjectiles);
-                return (-targetDirection, Vector2.zero);
+                var retreatTarget = (Vector2)curMe.transform.position - targetDirection * RetreatDistance;
+                var retreatDirection = BotPathFinder.GetMoveDirection(curMe.transform.position, retreatTarget);
+                return (retreatDirection, Vector2.zero);
             }
 
             // 공격 범위 체크
@@ -91,7 +94,8 @@ namespace Core.Simulator {
             // 추격
             state = State.Chase;
             StoreProjectilePositions(curProjectiles);
-            return (targetDirection, Vector2.zero);
+            var moveDirection = BotPathFinder.GetMoveDirection(curMe.transform.position, target.transform.position);
+            return (moveDirection, Vector2.zero);
         }
 
         private PlayerListener FindNearestTarget(Dictionary<string, PlayerListener> players, PlayerListener curMe) {

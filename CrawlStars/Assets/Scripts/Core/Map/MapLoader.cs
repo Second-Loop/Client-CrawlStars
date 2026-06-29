@@ -11,6 +11,10 @@ namespace Core.Map {
         private const string FilePrefix = "Map_";
         private const string FileExtension = ".json";
 
+        public static void SetCachedMapData(MapData mapData) {
+            CachedMapData = mapData;
+        }
+
         public static MapData GetMapData(int mapIndex) {
             if (CachedMapData?.index != mapIndex) {
                 CachedMapData = LoadMapFile(mapIndex);
