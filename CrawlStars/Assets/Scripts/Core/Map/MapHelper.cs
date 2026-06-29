@@ -2,8 +2,7 @@
 
 namespace Core.Map {
     public static class MapHelper {
-        public const float TileSize = 1.2f;
-        public const float HalfTileSize = TileSize * 0.5f;
+        private static readonly float HalfTileSize = GameConfig.TileSize * 0.5f;
 
         public static Vector2 GetMapStartPos(MapData mapData) => new Vector2(
             -HalfTileSize * (mapData.width - 1),
@@ -29,8 +28,8 @@ namespace Core.Map {
             Vector2 mapStartPos = GetMapStartPos(mapData);
             Vector2 localPos = worldPos - mapStartPos;
 
-            int x = Mathf.RoundToInt(localPos.x / TileSize);
-            int y = Mathf.RoundToInt(-localPos.y / TileSize);
+            int x = Mathf.RoundToInt(localPos.x / GameConfig.TileSize);
+            int y = Mathf.RoundToInt(-localPos.y / GameConfig.TileSize);
 
             return new Vector2Int(x, y);
         }
@@ -42,7 +41,7 @@ namespace Core.Map {
             if (mapData == null) return Vector2Int.zero;
 
             Vector2 mapStartPos = GetMapStartPos(mapData);
-            return mapStartPos + new Vector2(mapIdx.x, -mapIdx.y) * TileSize;
+            return mapStartPos + new Vector2(mapIdx.x, -mapIdx.y) * GameConfig.TileSize;
         }
     }
 }

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "tileSize": 1.2,
+  "playerRadius": 0.5,
+  "playerTypes": ["default"],
+  "projectileRadius": 0.3,
+  "projectileTypes": ["default"]
+}

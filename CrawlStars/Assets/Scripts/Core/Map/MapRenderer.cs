@@ -23,8 +23,8 @@ namespace Core.Map {
                     if (obj == null) return;
 
                     var tileType = (Tile.TileType)mapData.map[y][x];
-                    obj.Initialize(tileType, MapHelper.TileSize);
-                    obj.transform.localPosition = startPos + new Vector2(x, -y) * MapHelper.TileSize;
+                    obj.Initialize(tileType, GameConfig.TileSize);
+                    obj.transform.localPosition = startPos + new Vector2(x, -y) * GameConfig.TileSize;
                     loadedTiles.Add(obj);
                 }
             }

@@ -39,6 +39,12 @@ namespace Network {
         [JsonProperty("Snapshot")] public SnapshotDto Snapshot { get; set; }
     }
 
+    public class GameEndMessageDto {
+        [JsonProperty("Type")] public string Type { get; set; }
+        [JsonProperty("PlayerId")] public string PlayerId { get; set; }
+        [JsonProperty("Result")] public string Result { get; set; }
+    }
+
     public class ErrorMessageDto {
         [JsonProperty("Type")] public string Type { get; set; }
         [JsonProperty("Error")] public ApiErrorDto Error { get; set; }

@@ -19,6 +19,7 @@ namespace Network {
         public bool IsMatched { get; private set; }
 
         public event Action<SnapshotDto> SnapshotReceived;
+        public event Action<GameEndMessageDto> GameEndReceived;
 
         protected override void Awake() {
             base.Awake();
@@ -151,6 +152,16 @@ namespace Network {
                             return;
                         }
                         SnapshotReceived?.Invoke(snapshotMessage.Snapshot);
+                        break;
+                    case "GameEnd":
+                        var gameEndMessage = JsonConvert.DeserializeObject<GameEndMessageDto>(message);
+                        if (gameEndMessage == null ||
+                            string.IsNullOrEmpty(gameEndMessage.PlayerId) ||
+                            string.IsNullOrEmpty(gameEndMessage.Result)) {
+                            Debug.LogWarning("NetworkManager.HandleSocketMessage::game end data is invalid");
+                            return;
+                        }
+                        GameEndReceived?.Invoke(gameEndMessage);
                         break;
                     case "error":
                         var errorMessage = JsonConvert.DeserializeObject<ErrorMessageDto>(message);

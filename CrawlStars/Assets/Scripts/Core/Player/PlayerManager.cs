@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using CameraControl;
-using Cysharp.Threading.Tasks;
 using Network;
 using UnityEngine;
 using Utility;
@@ -52,11 +51,6 @@ namespace Core.Player {
                 if (player.IsDead) {
                     ObjectPooling.Instance.TryAbandon(Constants.Player, listener.gameObject);
                     playerListeners.Remove(player.Id);
-                    
-                    // 내가 죽었을 때, 추후 서버로부터 메시지 받는 것으로..
-                    if (player.Id == MyId) {
-                        GameManager.Instance.EndGameAsync(false).Forget();
-                    }
                     continue;
                 }
 
