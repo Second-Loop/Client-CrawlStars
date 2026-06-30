@@ -7,21 +7,9 @@ using Network;
 using UnityEngine;
 
 namespace Core.Simulator {
-    /*
-     * Explore → 적, 아이템, 목표물을 찾으며 이동
-     * Chase → 적 추격
-     * Attack → 적 공격
-     * Dodge → 공격 회피
-     * Retreat -> 도망
-     */
-
     public class BotController {
         private static BotController instance;
         public static BotController Instance => instance ??= new BotController();
-        
-        private enum State { None, Explore, Chase, Attack, Dodge, Retreat }
-
-        private State state;
 
         private readonly Dictionary<string, Vector2> prevProjectilePositions = new Dictionary<string, Vector2>();
         private static readonly Vector2Int InvalidPathTile = new Vector2Int(int.MinValue, int.MinValue);
@@ -40,7 +28,6 @@ namespace Core.Simulator {
         private const float MinDirectionSqrMagnitude = 0.0001f;
 
         public void Initialize() {
-            state = State.None;
             prevProjectilePositions.Clear();
             ClearCachedPath();
             lastAttackTime = -AttackInterval;
@@ -63,7 +50,6 @@ namespace Core.Simulator {
 
             if (curMe == null) {
                 StoreProjectilePositions(curProjectiles);
-                state = State.Explore;
                 return (Vector2.zero, Vector2.zero);
             }
 
@@ -72,7 +58,6 @@ namespace Core.Simulator {
                 : (target.transform.position - curMe.transform.position).normalized;
 
             if (target == null) {
-                state = State.Explore;
                 StoreProjectilePositions(curProjectiles);
                 return (Vector2.zero, Vector2.zero);
             }
@@ -82,26 +67,22 @@ namespace Core.Simulator {
 
             // 회피 체크
             if (TryGetDodgeDirection(curProjectiles, curMe, out Vector2 dodgeDirection)) {
-                state = State.Dodge;
                 moveDirection = dodgeDirection;
             }
             // 체력이 낮으면 가장 가까운 적 반대 방향으로 도망
             else if (ShouldRetreat(curMe)) {
-                state = State.Retreat;
                 var retreatTarget = (Vector2)curMe.transform.position - targetDirection * RetreatDistance;
                 var retreatDirection = GetCachedMoveDirection(curMe.transform.position, retreatTarget);
                 moveDirection = retreatDirection;
             }
             // 추격
             else {
-                state = State.Chase;
                 var chaseDirection = GetCachedMoveDirection(curMe.transform.position, target.transform.position);
                 moveDirection =  chaseDirection;
             }
 
             // 공격 범위 체크
             if (IsInAttackRange(curMe, target) && CanAttack()) {
-                state = State.Attack;
                 attackDirection = targetDirection;
                 lastAttackTime = Time.time;
             }
