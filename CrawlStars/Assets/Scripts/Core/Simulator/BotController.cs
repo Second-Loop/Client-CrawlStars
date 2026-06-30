@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Core.Map;
 using Core.Player;
 using Core.Projectile;
 using Cysharp.Threading.Tasks;
@@ -23,6 +24,10 @@ namespace Core.Simulator {
         private State state;
 
         private readonly Dictionary<string, Vector2> prevProjectilePositions = new Dictionary<string, Vector2>();
+        private static readonly Vector2Int InvalidPathTile = new Vector2Int(int.MinValue, int.MinValue);
+        private Vector2Int cachedPathStart = InvalidPathTile;
+        private Vector2Int cachedPathGoal = InvalidPathTile;
+        private Vector2 cachedMoveDirection;
 
         private const float AttackRange = 5f;
         private const float RetreatHpThreshold = 0.2f;
@@ -35,6 +40,7 @@ namespace Core.Simulator {
         public void Initialize() {
             state = State.None;
             prevProjectilePositions.Clear();
+            ClearCachedPath();
         }
 
         public async UniTask SendInputAsync() {
@@ -74,33 +80,57 @@ namespace Core.Simulator {
             // 회피 체크
             if (TryGetDodgeDirection(curProjectiles, curMe, out Vector2 dodgeDirection)) {
                 state = State.Dodge;
-                StoreProjectilePositions(curProjectiles);
                 moveDirection = dodgeDirection;
             }
             // 체력이 낮으면 가장 가까운 적 반대 방향으로 도망
             else if (ShouldRetreat(curMe)) {
                 state = State.Retreat;
-                StoreProjectilePositions(curProjectiles);
                 var retreatTarget = (Vector2)curMe.transform.position - targetDirection * RetreatDistance;
-                var retreatDirection = BotPathFinder.GetMoveDirection(curMe.transform.position, retreatTarget);
+                var retreatDirection = GetCachedMoveDirection(curMe.transform.position, retreatTarget);
                 moveDirection = retreatDirection;
             }
             // 추격
             else {
                 state = State.Chase;
-                StoreProjectilePositions(curProjectiles);
-                var chaseDirection = BotPathFinder.GetMoveDirection(curMe.transform.position, target.transform.position);
+                var chaseDirection = GetCachedMoveDirection(curMe.transform.position, target.transform.position);
                 moveDirection =  chaseDirection;
             }
 
             // 공격 범위 체크
             if (IsInAttackRange(curMe, target)) {
                 state = State.Attack;
-                StoreProjectilePositions(curProjectiles);
                 attackDirection = targetDirection;
             }
 
+            StoreProjectilePositions(curProjectiles);
             return (moveDirection, attackDirection);
+        }
+
+        private Vector2 GetCachedMoveDirection(Vector2 fromWorld, Vector2 toWorld) {
+            if (MapLoader.CachedMapData == null) {
+                return BotPathFinder.GetMoveDirection(fromWorld, toWorld);
+            }
+
+            Vector2Int start = MapHelper.GetMapIdx(fromWorld);
+            Vector2Int goal = MapHelper.GetMapIdx(toWorld);
+            if (start == goal) {
+                return BotPathFinder.GetMoveDirection(fromWorld, toWorld);
+            }
+
+            if (start == cachedPathStart && goal == cachedPathGoal) {
+                return cachedMoveDirection;
+            }
+
+            cachedPathStart = start;
+            cachedPathGoal = goal;
+            cachedMoveDirection = BotPathFinder.GetMoveDirection(fromWorld, toWorld);
+            return cachedMoveDirection;
+        }
+
+        private void ClearCachedPath() {
+            cachedPathStart = InvalidPathTile;
+            cachedPathGoal = InvalidPathTile;
+            cachedMoveDirection = Vector2.zero;
         }
 
         private PlayerListener FindNearestTarget(Dictionary<string, PlayerListener> players, PlayerListener curMe) {
