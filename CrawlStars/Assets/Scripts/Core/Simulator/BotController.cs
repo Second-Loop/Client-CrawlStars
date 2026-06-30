@@ -28,8 +28,10 @@ namespace Core.Simulator {
         private Vector2Int cachedPathStart = InvalidPathTile;
         private Vector2Int cachedPathGoal = InvalidPathTile;
         private Vector2 cachedMoveDirection;
+        private float lastAttackTime;
 
         private const float AttackRange = 5f;
+        private const float AttackInterval = 0.3f;
         private const float RetreatHpThreshold = 0.2f;
         private const float RetreatDistance = 6f;
         private const float ProjectileLookAheadDistance = 8f;
@@ -41,6 +43,7 @@ namespace Core.Simulator {
             state = State.None;
             prevProjectilePositions.Clear();
             ClearCachedPath();
+            lastAttackTime = -AttackInterval;
         }
 
         public async UniTask SendInputAsync() {
@@ -97,9 +100,10 @@ namespace Core.Simulator {
             }
 
             // 공격 범위 체크
-            if (IsInAttackRange(curMe, target)) {
+            if (IsInAttackRange(curMe, target) && CanAttack()) {
                 state = State.Attack;
                 attackDirection = targetDirection;
+                lastAttackTime = Time.time;
             }
 
             StoreProjectilePositions(curProjectiles);
@@ -159,6 +163,10 @@ namespace Core.Simulator {
 
         private bool ShouldRetreat(PlayerListener curMe) {
             return curMe.Hp > 0f && curMe.Hp <= RetreatHpThreshold;
+        }
+
+        private bool CanAttack() {
+            return Time.time - lastAttackTime >= AttackInterval;
         }
 
         // 투사체 검사 후 회피해야 하면 회피 방향 전달
