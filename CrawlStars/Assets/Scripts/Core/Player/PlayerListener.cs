@@ -9,6 +9,9 @@ namespace Core.Player {
 
         private bool isStatusInitialized;
 
+        // 임시
+        public float Hp => hpBar.Value;
+
         public void Initialize(ReadyPlayerDto playerData) {
             isStatusInitialized = false;
             MoveTo(playerData.SpawnPosition.ToVector2());
