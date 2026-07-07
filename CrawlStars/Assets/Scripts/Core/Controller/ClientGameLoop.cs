@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.Player;
 using Core.Projectile;
+using Core.Simulator;
 using Cysharp.Threading.Tasks;
 using Network;
 using Popup;
@@ -32,7 +33,11 @@ namespace Core.Controller {
 
             accumulator += Time.deltaTime;
             if (accumulator >= InputInterval) {
-                SendInputAsync().Forget();
+                if (GameManager.Instance.IsBotModeActivated) {
+                    BotController.Instance.SendInputAsync().Forget();
+                } else {
+                    SendInputAsync().Forget();
+                }
                 accumulator -= InputInterval;
             }
         }
@@ -71,12 +76,13 @@ namespace Core.Controller {
             isInitialized = false;
         }
 
-        private UniTask SendInputAsync() {
+        private async UniTask SendInputAsync() {
             Vector2 moveDirection = inputProvider.GetMoveDirection();
             Vector2 attackDirection = inputProvider.CaptureAttackDirection();
+
             OnReceivedInput?.Invoke(moveDirection, attackDirection);
 
-            return NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
+            await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
                 MoveDir = new Vector2Dto(moveDirection),
                 AttackDir = new Vector2Dto(attackDirection),
                 PressedAttack = attackDirection != Vector2.zero

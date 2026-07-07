@@ -5,6 +5,7 @@ using Core.Player;
 using Cysharp.Threading.Tasks;
 using Network;
 using Core.Projectile;
+using Core.Simulator;
 using Managing;
 using Popup;
 using UnityEngine;
@@ -14,10 +15,17 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     [SerializeField] private ClientGameLoop clientGameLoop;
     private bool isEnding;
 
+    public bool IsBotModeActivated = false;
+
     public void Initialize(ReadyEventMessageDto readyEvent) {
+        MapLoader.SetCachedMapData(readyEvent.Map);
         mapRenderer.Render(readyEvent.Map);
         clientGameLoop.Initialize(readyEvent.Players);
         NetworkManager.Instance.GameEndReceived += HandleGameEnd;
+
+        if (IsBotModeActivated) {
+            BotController.Instance.Initialize();
+        }
     }
 
     public void OnEnterPlayScene() {

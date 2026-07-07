@@ -10,6 +10,9 @@ public class StatusBar : MonoBehaviour {
 
     private int maxValue;
 
+    // 임시
+    public float Value => barImage.fillAmount;
+
     public void Initialize(int maxValue) {
         this.maxValue = maxValue;
         barBg.fillAmount = 1f;
