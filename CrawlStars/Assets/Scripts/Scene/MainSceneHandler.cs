@@ -10,12 +10,18 @@ namespace Scene {
     public class MainSceneHandler : BaseSceneHandler {
         [SerializeField] private Button playButton;
         [SerializeField] private Button settingButton;
+        [SerializeField] private Button selectCharacterButton;
+        [SerializeField] private Button selectModeButton;
+
         [SerializeField] private Toggle botModeToggle;
 
         protected override void Start() {
             base.Start();
             playButton.onClick.AddListener(OnClickPlayButton);
             settingButton.onClick.AddListener(OnClickSettingButton);
+            selectCharacterButton.onClick.AddListener(OnClickSelectCharacterButton);
+            selectModeButton.onClick.AddListener(OnClickSelectModeButton);
+
             botModeToggle.onValueChanged.AddListener(OnValueChangedBotMode);
         }
 
@@ -23,7 +29,14 @@ namespace Scene {
             PopupManager.Instance.ShowAsync(nameof(MatchingPopup)).Forget();
         }
 
-        private void OnClickSettingButton() {
+        private void OnClickSettingButton() { }
+        
+        private void OnClickSelectCharacterButton() {
+            // PopupManager.Instance.ShowAsync()
+        }
+        
+        private void OnClickSelectModeButton() {
+            
         }
 
         private void OnValueChangedBotMode(bool isOn) {
