@@ -12,6 +12,10 @@ namespace Scene {
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
             Application.runInBackground = true;
+
+            UniTaskScheduler.UnobservedTaskException += exception => {
+                Debug.LogError(exception.ToString());
+            };
         }
 
         private void Start() {
@@ -19,7 +23,11 @@ namespace Scene {
         }
 
         private async UniTask InitializeAsync() {
-            await GameConfig.LoadAsync();
+            var configTask = GameConfig.LoadAsync();
+            var modeTask = ModeManager.Instance.InitializeAsync();
+            var characterTask = CharacterManager.Instance.InitializeAsync();
+
+            await UniTask.WhenAll(configTask, modeTask, characterTask);
 
             await SceneController.Instance.ChangeSceneAsync(SceneController.MainSceneName);
         }

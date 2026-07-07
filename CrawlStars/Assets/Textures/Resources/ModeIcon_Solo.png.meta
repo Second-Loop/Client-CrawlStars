@@ -1,0 +1,546 @@
+fileFormatVersion: 2
+guid: e5767816977a9fa44aee7277a0d151c1
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8240575902131908131
+    second: ModeIcon_Solo_0
+  - first:
+      213: -4506917351961473469
+    second: ModeIcon_Solo_1
+  - first:
+      213: 7534507202578196130
+    second: ModeIcon_Solo_2
+  - first:
+      213: 5887211134590044270
+    second: ModeIcon_Solo_3
+  - first:
+      213: -3346808450839975765
+    second: ModeIcon_Solo_4
+  - first:
+      213: -5569967894687567182
+    second: ModeIcon_Solo_5
+  - first:
+      213: 3003235188536633801
+    second: ModeIcon_Solo_6
+  - first:
+      213: 467695572618909825
+    second: ModeIcon_Solo_7
+  - first:
+      213: -812649874496813439
+    second: ModeIcon_Solo_8
+  - first:
+      213: 1733443335144254944
+    second: ModeIcon_Solo_9
+  - first:
+      213: 3358461790183268560
+    second: ModeIcon_Solo_10
+  - first:
+      213: 2129123475519534868
+    second: ModeIcon_Solo_11
+  - first:
+      213: 2200027751043447534
+    second: ModeIcon_Solo_12
+  - first:
+      213: -4267842095544587294
+    second: ModeIcon_Solo_13
+  - first:
+      213: 8916687971132286695
+    second: ModeIcon_Solo_14
+  - first:
+      213: 3655275724131807899
+    second: ModeIcon_Solo_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: ModeIcon_Solo_0
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 332
+        width: 137
+        height: 136
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 32e673f5f186c5270800000000000000
+      internalID: 8240575902131908131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_1
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 430
+        width: 22
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34eca4c0c863471c0800000000000000
+      internalID: -4506917351961473469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_2
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 332
+        width: 135
+        height: 136
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a6ab479162ff8860800000000000000
+      internalID: 7534507202578196130
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_3
+      rect:
+        serializedVersion: 2
+        x: 123
+        y: 302
+        width: 47
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e68c6fac55393b150800000000000000
+      internalID: 5887211134590044270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_4
+      rect:
+        serializedVersion: 2
+        x: 183
+        y: 191
+        width: 94
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba86864327fbd81d0800000000000000
+      internalID: -3346808450839975765
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_5
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 293
+        width: 181
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b231d2f5bf73b2b0800000000000000
+      internalID: -5569967894687567182
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_6
+      rect:
+        serializedVersion: 2
+        x: 234
+        y: 258
+        width: 127
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9c9edadfd72ada920800000000000000
+      internalID: 3003235188536633801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_7
+      rect:
+        serializedVersion: 2
+        x: 408
+        y: 290
+        width: 18
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18819f435a69d7600800000000000000
+      internalID: 467695572618909825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_8
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 302
+        width: 32
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1860ad7ae33e8b4f0800000000000000
+      internalID: -812649874496813439
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_9
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 152
+        width: 137
+        height: 140
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0edaa85778d6e0810800000000000000
+      internalID: 1733443335144254944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_10
+      rect:
+        serializedVersion: 2
+        x: 275
+        y: 195
+        width: 127
+        height: 87
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d0a89b4437ab9e20800000000000000
+      internalID: 3358461790183268560
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_11
+      rect:
+        serializedVersion: 2
+        x: 276
+        y: 176
+        width: 55
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4177949358a2c8d10800000000000000
+      internalID: 2129123475519534868
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_12
+      rect:
+        serializedVersion: 2
+        x: 407
+        y: 195
+        width: 22
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eea32f45591188e10800000000000000
+      internalID: 2200027751043447534
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_13
+      rect:
+        serializedVersion: 2
+        x: 409
+        y: 221
+        width: 67
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2eb2b91e93495c4c0800000000000000
+      internalID: -4267842095544587294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_14
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 134
+        width: 22
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e6a65497707ebb70800000000000000
+      internalID: 8916687971132286695
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModeIcon_Solo_15
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 151
+        width: 83
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b923cf497e52ab230800000000000000
+      internalID: 3655275724131807899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      ModeIcon_Solo_0: 8240575902131908131
+      ModeIcon_Solo_1: -4506917351961473469
+      ModeIcon_Solo_10: 3358461790183268560
+      ModeIcon_Solo_11: 2129123475519534868
+      ModeIcon_Solo_12: 2200027751043447534
+      ModeIcon_Solo_13: -4267842095544587294
+      ModeIcon_Solo_14: 8916687971132286695
+      ModeIcon_Solo_15: 3655275724131807899
+      ModeIcon_Solo_2: 7534507202578196130
+      ModeIcon_Solo_3: 5887211134590044270
+      ModeIcon_Solo_4: -3346808450839975765
+      ModeIcon_Solo_5: -5569967894687567182
+      ModeIcon_Solo_6: 3003235188536633801
+      ModeIcon_Solo_7: 467695572618909825
+      ModeIcon_Solo_8: -812649874496813439
+      ModeIcon_Solo_9: 1733443335144254944
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
