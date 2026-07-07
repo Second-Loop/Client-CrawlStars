@@ -1,5 +1,7 @@
+using Core;
 using Cysharp.Threading.Tasks;
 using Popup;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 #if UNITY_EDITOR
@@ -13,6 +15,9 @@ namespace Scene {
         [SerializeField] private Button selectCharacterButton;
         [SerializeField] private Button selectModeButton;
 
+        [SerializeField] private TextMeshProUGUI selectedCharacterText;
+        [SerializeField] private TextMeshProUGUI selectedModeText;
+        
         [SerializeField] private Toggle botModeToggle;
 
         protected override void Start() {
@@ -23,6 +28,8 @@ namespace Scene {
             selectModeButton.onClick.AddListener(OnClickSelectModeButton);
 
             botModeToggle.onValueChanged.AddListener(OnValueChangedBotMode);
+
+            selectedModeText.text = ModeManager.Instance.CurGameMode.ToString();
         }
 
         private void OnClickPlayButton() {
@@ -32,15 +39,20 @@ namespace Scene {
         private void OnClickSettingButton() { }
         
         private void OnClickSelectCharacterButton() {
-            // PopupManager.Instance.ShowAsync()
+            PopupManager.Instance.ShowAsync(nameof(CharacterPopup)).Forget();
         }
         
         private void OnClickSelectModeButton() {
-            
+            OnClickSelectModeAsync().Forget();
         }
 
         private void OnValueChangedBotMode(bool isOn) {
             GameManager.Instance.IsBotModeActivated = isOn;
+        }
+
+        private async UniTask OnClickSelectModeAsync() {
+            await PopupManager.Instance.ShowAsync(nameof(ModePopup));
+            selectedModeText.text = ModeManager.Instance.CurGameMode.ToString();
         }
 
         protected override async UniTask ClickLeaveInternal() {
