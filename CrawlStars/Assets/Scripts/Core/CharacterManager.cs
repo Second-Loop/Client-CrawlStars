@@ -16,7 +16,8 @@ namespace Core {
 
         private CharacterInfo characterInfo;
 
-        public CharacterType CurCharacter { get; set; }
+        public CharacterType MyCharacterType { get; private set; }
+        public CharacterInfo.Definition MyCharacter { get; private set; }
 
         public async UniTask InitializeAsync() {
             var handle = Addressables.LoadAssetAsync<CharacterInfoSo>("CharacterInfo");
@@ -31,6 +32,19 @@ namespace Core {
             }
 
             characterInfo = new CharacterInfo(clientCharacterInfoSo);
+        }
+
+        /// <summary>
+        /// 비동기 회피로 TryReInitialize 하지 않았기에 캐릭터 선택 팝업에서만 호출
+        /// 팝업에서 불렀다는 것은 데이터 초기화가 유효하다는 뜻이기 때문
+        /// </summary>
+        public void SetMyCharacter(CharacterType type) {
+            MyCharacterType = type;
+            if (characterInfo?.Data == null || !characterInfo.Data.TryGetValue(type, out var definition)) {
+                Debug.LogError($"CharacterManager.SetMyCharacter::there is no data for {type}");
+                return;
+            }
+            MyCharacter = definition;
         }
 
         public async UniTask<IReadOnlyDictionary<CharacterType, CharacterInfo.Definition>> GetCharacterInfoAsync() {

@@ -29,6 +29,6 @@ public class CharacterItem : MonoBehaviour {
     }
 
     private void OnClickButton(CharacterManager.CharacterType character) {
-        CharacterManager.Instance.CurCharacter = character;
+        CharacterManager.Instance.SetMyCharacter(character);
     }
 }

@@ -30,7 +30,7 @@ namespace Scene {
             botModeToggle.onValueChanged.AddListener(OnValueChangedBotMode);
 
             selectedModeText.text = ModeManager.Instance.CurGameMode.ToString();
-            selectedCharacterText.text = CharacterManager.Instance.CurCharacter.ToString();
+            selectedCharacterText.text = CharacterManager.Instance.MyCharacterType.ToString();
         }
 
         private void OnClickPlayButton() {
@@ -58,7 +58,7 @@ namespace Scene {
 
         private async UniTask OnClickSelectCharacterAsync() {
             await PopupManager.Instance.ShowAsync(nameof(CharacterPopup));
-            selectedCharacterText.text = CharacterManager.Instance.CurCharacter.ToString();
+            selectedCharacterText.text = CharacterManager.Instance.MyCharacterType.ToString();
         }
 
         protected override async UniTask ClickLeaveInternal() {
