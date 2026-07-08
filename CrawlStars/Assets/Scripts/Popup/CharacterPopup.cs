@@ -14,21 +14,7 @@ public class CharacterPopup : PopupHandler {
     public override void SetData(Param param, int sortingOrder) {
         base.SetData(param, sortingOrder);
 
-        SetDataAsync().Forget();
-    }
-
-    public override void Dispose(Result result = null) {
-        foreach (var characterItem in characterItems) {
-            characterItem.Release();
-            ObjectPooling.Instance.TryAbandon(nameof(CharacterItem), characterItem.gameObject);
-        }
-
-        characterItems.Clear();
-        base.Dispose(result);
-    }
-
-    private async UniTaskVoid SetDataAsync() {
-        var info = await CharacterManager.Instance.GetCharacterInfoAsync();
+        var info = CharacterManager.Instance.GetCharacterInfo();
         if (info == null) {
             RequestPopupClosing();
             return;
@@ -41,5 +27,15 @@ public class CharacterPopup : PopupHandler {
         }
 
         spacer.SetActive(info.Count < 3);
+    }
+
+    public override void Dispose(Result result = null) {
+        foreach (var characterItem in characterItems) {
+            characterItem.Release();
+            ObjectPooling.Instance.TryAbandon(nameof(CharacterItem), characterItem.gameObject);
+        }
+
+        characterItems.Clear();
+        base.Dispose(result);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Core {
@@ -17,7 +18,7 @@ namespace Core {
         public CharacterInfo(CharacterInfoSo infoSo) {
             if (infoSo == null) {
                 Debug.LogError("CharacterInfo.ctor::invalid parameter");
-                return;
+                throw new ArgumentNullException();
             }
 
             var data = new Dictionary<CharacterManager.CharacterType, Definition>();

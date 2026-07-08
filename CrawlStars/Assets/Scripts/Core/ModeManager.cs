@@ -14,7 +14,7 @@ namespace Core {
 
         private ModeInfo modeInfo;
 
-        public async UniTask InitializeAsync() {
+        public async UniTask<bool> InitializeAsync() {
             var handle = Addressables.LoadAssetAsync<ModeInfo>("ModeInfo");
             var res = await handle.ToUniTask();
 
@@ -22,17 +22,15 @@ namespace Core {
                 modeInfo = res;
             } else {
                 Debug.LogError($"ModeManager.Initialize::failed to load ModeInfo/{handle.Status}/{handle.OperationException}");
+                return false;
             }
+
+            return true;
         }
 
-        public async UniTask<ModeInfo> GetModeInfoAsync() {
-            if (modeInfo == null) {
-                await InitializeAsync();
-            }
-
+        public ModeInfo GetModeInfo() {
             if (modeInfo == null) {
                 Debug.LogError("ModeManager.GetModeInfoAsync::failed to initialize");
-                return null;
             }
             return modeInfo;
         }

@@ -13,21 +13,8 @@ public class ModePopup : PopupHandler {
 
     public override void SetData(Param param, int sortingOrder) {
         base.SetData(param, sortingOrder);
-        
-        SetDataAsync().Forget();
-    }
 
-    public override void Dispose(Result result = null) {
-        foreach (var modeItem in modeItems) {
-            modeItem.Release();
-            ObjectPooling.Instance.TryAbandon(nameof(ModeItem), modeItem.gameObject);
-        }
-        modeItems.Clear();
-        base.Dispose(result);
-    }
-
-    private async UniTaskVoid SetDataAsync() {
-        var info = await ModeManager.Instance.GetModeInfoAsync();
+        var info = ModeManager.Instance.GetModeInfo();
         if (info == null) {
             RequestPopupClosing();
             return;
@@ -39,6 +26,15 @@ public class ModePopup : PopupHandler {
             modeItems.Add(modeItem);
         }
 
-        spacer.SetActive(info.items.Length < 3);
+        spacer.SetActive(info.items.Length < 3);;
+    }
+
+    public override void Dispose(Result result = null) {
+        foreach (var modeItem in modeItems) {
+            modeItem.Release();
+            ObjectPooling.Instance.TryAbandon(nameof(ModeItem), modeItem.gameObject);
+        }
+        modeItems.Clear();
+        base.Dispose(result);
     }
 }

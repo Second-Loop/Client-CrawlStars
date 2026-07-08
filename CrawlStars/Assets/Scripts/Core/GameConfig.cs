@@ -23,33 +23,30 @@ namespace Core {
         public static PlayerConfig[] PlayerConfigs { get; set; }
         public static float ProjectileRadius { get; private set; }
 
-        public static async UniTask LoadAsync() {
+        public static async UniTask<bool> LoadAsync() {
             string path = Path.Combine(Application.streamingAssetsPath, ConfigFileName);
             string configUrl = path.Contains("://") ? path : new Uri(path).AbsoluteUri;
 
-            try {
-                using var request = UnityWebRequest.Get(configUrl);
-                await request.SendWebRequest();
+            using var request = UnityWebRequest.Get(configUrl);
+            await request.SendWebRequest();
 
-                if (request.result != UnityWebRequest.Result.Success) {
-                    Debug.LogError($"GameConfig.LoadAsync::failed to load config. url={configUrl}, error={request.error}");
-                    return;
-                }
-
-                var config = JsonConvert.DeserializeObject<GameConfigFile>(request.downloadHandler.text);
-                if (config == null) {
-                    Debug.LogError("GameConfig.LoadAsync::config file is empty or invalid.");
-                    return;
-                }
-
-                Version = config.Version;
-                TileSize = config.TileSize;
-                PlayerRadius = config.PlayerRadius;
-                PlayerConfigs = config.characters ?? Array.Empty<PlayerConfig>();
-                ProjectileRadius = config.ProjectileRadius;
-            } catch (Exception e) {
-                Debug.LogError($"GameConfig.LoadAsync::failed to load config. {e.Message}");
+            if (request.result != UnityWebRequest.Result.Success) {
+                Debug.LogError($"GameConfig.LoadAsync::failed to load config. url={configUrl}, error={request.error}");
+                return false;
             }
+
+            var config = JsonConvert.DeserializeObject<GameConfigFile>(request.downloadHandler.text);
+            if (config == null) {
+                Debug.LogError("GameConfig.LoadAsync::config file is empty or invalid.");
+                return false;
+            }
+
+            Version = config.Version;
+            TileSize = config.TileSize;
+            PlayerRadius = config.PlayerRadius;
+            PlayerConfigs = config.characters ?? Array.Empty<PlayerConfig>();
+            ProjectileRadius = config.ProjectileRadius;
+            return true;
         }
 
         private sealed class GameConfigFile {
