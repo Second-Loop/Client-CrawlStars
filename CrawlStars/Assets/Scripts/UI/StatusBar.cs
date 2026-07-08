@@ -9,6 +9,10 @@ public class StatusBar : MonoBehaviour {
     [SerializeField] private TextMeshProUGUI progressText;
 
     private int maxValue;
+    
+    private static readonly Color32 MyColor = new Color32(14, 164, 0, 255);
+    private static readonly Color32 MySideColor = new Color32(0, 205, 219, 255);
+    private static readonly Color32 OtherSideColor = new Color32(210, 59, 69, 255);
 
     // 임시
     public float Value => barImage.fillAmount;
@@ -18,6 +22,11 @@ public class StatusBar : MonoBehaviour {
         barBg.fillAmount = 1f;
         barImage.fillAmount = 1f;
         progressText.text = maxValue.ToString();
+        gameObject.SetActive(true);
+    }
+
+    public void SetColor(bool isMySide, bool isMe) {
+        barImage.color = isMe ? MyColor : (isMySide ? MySideColor : OtherSideColor);
     }
 
     public void MoveValue(int to) {

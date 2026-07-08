@@ -15,6 +15,7 @@ namespace Core.Player {
         public PlayerListener myListener;
         
         public string MyId { get; set; }
+        public string MyTeam { get; set; }
 
         public void Initialize(IReadOnlyList<ReadyPlayerDto> players) {
             ClearListeners();

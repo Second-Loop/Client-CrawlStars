@@ -107,9 +107,11 @@ namespace Network {
                 Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
                 throw new WebException("matchmaking response is null");
             }
+
             Debug.Log($"Room Id: {dto.Room.Id}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
                       $"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
             PlayerManager.Instance.MyId = dto.Player.Id;
+            PlayerManager.Instance.MyTeam = dto.Player.Team;
             ct.ThrowIfCancellationRequested();
 
             // 방 입장
