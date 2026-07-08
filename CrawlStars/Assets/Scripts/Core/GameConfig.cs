@@ -7,14 +7,21 @@ using UnityEngine.Networking;
 
 namespace Core {
     public static class GameConfig {
+        public class PlayerConfig {
+            [JsonProperty("type")] public int type;
+            [JsonProperty("normalAttackDistance")] public float normalAttackDistance;
+            [JsonProperty("skillAttackDistance")] public float skillAttackDistance;
+            [JsonProperty("skillAttackCoolDown")] public int skillAttackCoolDown;
+            [JsonProperty("maxBullets")] public int maxBullets;
+        }
+
         private const string ConfigFileName = "game-config.json";
 
         public static int Version { get; private set; }
         public static float TileSize { get; private set; }
         public static float PlayerRadius { get; private set; }
-        public static string[] PlayerTypes { get; private set; } = Array.Empty<string>();
+        public static PlayerConfig[] PlayerConfigs { get; private set; } = Array.Empty<PlayerConfig>();
         public static float ProjectileRadius { get; private set; }
-        public static string[] ProjectileTypes { get; private set; } = Array.Empty<string>();
 
         public static async UniTask LoadAsync() {
             string path = Path.Combine(Application.streamingAssetsPath, ConfigFileName);
@@ -38,9 +45,8 @@ namespace Core {
                 Version = config.Version;
                 TileSize = config.TileSize;
                 PlayerRadius = config.PlayerRadius;
-                PlayerTypes = config.PlayerTypes ?? Array.Empty<string>();
+                PlayerConfigs = config.characters ?? Array.Empty<PlayerConfig>();
                 ProjectileRadius = config.ProjectileRadius;
-                ProjectileTypes = config.ProjectileTypes ?? Array.Empty<string>();
             } catch (Exception e) {
                 Debug.LogError($"GameConfig.LoadAsync::failed to load config. {e.Message}");
             }
@@ -50,9 +56,9 @@ namespace Core {
             [JsonProperty("version")] public int Version { get; set; }
             [JsonProperty("tileSize")] public float TileSize { get; set; }
             [JsonProperty("playerRadius")] public float PlayerRadius { get; set; }
-            [JsonProperty("playerTypes")] public string[] PlayerTypes { get; set; }
+            [JsonProperty("characters")] public PlayerConfig[] characters { get; set; }
+            [JsonProperty("normalAttackCoolDown")] public int normalAttackCoolDown { get; set; }
             [JsonProperty("projectileRadius")] public float ProjectileRadius { get; set; }
-            [JsonProperty("projectileTypes")] public string[] ProjectileTypes { get; set; }
         }
     }
 }

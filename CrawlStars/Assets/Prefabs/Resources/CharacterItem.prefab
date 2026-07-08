@@ -449,8 +449,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterItem
   button: {fileID: 7637551895254792514}
   icon: {fileID: 578105846125328118}
-  title: {fileID: 9137895879667063023}
-  subTitle: {fileID: 3162480895180536258}
+  characterName: {fileID: 9137895879667063023}
+  description: {fileID: 3162480895180536258}
 --- !u!114 &7462496216935089049
 MonoBehaviour:
   m_ObjectHideFlags: 0

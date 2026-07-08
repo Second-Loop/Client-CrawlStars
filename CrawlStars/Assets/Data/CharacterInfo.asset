@@ -13,15 +13,12 @@ MonoBehaviour:
   m_Name: CharacterInfo
   m_EditorClassIdentifier: Assembly-CSharp::CharacterInfo
   items:
-  - character: 0
-    title: A
-    subTitle: AA
-    iconSpriteName: 
-  - character: 1
-    title: B
-    subTitle: BB
-    iconSpriteName: 
-  - character: 2
-    title: C
-    subTitle: CC
-    iconSpriteName: 
+  - characterType: 0
+    description: Damage Dealer
+    iconSpriteName: Character_A
+  - characterType: 1
+    description: Assasin
+    iconSpriteName: Character_B
+  - characterType: 2
+    description: Damage Dealer
+    iconSpriteName: Character_C

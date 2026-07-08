@@ -34,12 +34,12 @@ public class CharacterPopup : PopupHandler {
             return;
         }
 
-        foreach (var item in info.items) {
+        foreach (var item in info) {
             var characterItem = ObjectPooling.Instance.Get<CharacterItem>(nameof(CharacterItem), itemRoot);
             characterItem.SetData(item, () => RequestPopupClosing());
             characterItems.Add(characterItem);
         }
 
-        spacer.SetActive(info.items.Length < 3);
+        spacer.SetActive(info.Count < 3);
     }
 }

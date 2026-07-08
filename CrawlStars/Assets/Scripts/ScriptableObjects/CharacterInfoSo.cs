@@ -4,13 +4,12 @@ using Core.Player;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "CharacterInfo", menuName = "Scriptable Objects/CharacterInfo")]
-public class CharacterInfo : ScriptableObject {
+public class CharacterInfoSo : ScriptableObject {
 
     [Serializable]
     public class CharacterItemInfo {
-        public PlayerData.CharacterType character;
-        public string title;
-        public string subTitle;
+        public CharacterManager.CharacterType characterType;
+        public string description;
         public string iconSpriteName;
     }
 

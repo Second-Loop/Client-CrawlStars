@@ -2,7 +2,29 @@
   "version": 1,
   "tileSize": 1.2,
   "playerRadius": 0.5,
-  "playerTypes": ["default"],
-  "projectileRadius": 0.3,
-  "projectileTypes": ["default"]
+  "characters": [
+    {
+      "type": 0,
+      "normalAttackDistance": 5.0,
+      "skillAttackDistance": 1.0,
+      "skillAttackCoolDown": 10,
+      "maxBullets": 3
+    },
+    {
+      "type": 1,
+      "normalAttackDistance": 1.5,
+      "skillAttackDistance": 3.0,
+      "skillAttackCoolDown": 10,
+      "maxBullets": 3
+    },
+    {
+      "type": 2,
+      "normalAttackDistance": 6.0,
+      "skillAttackDistance": 7.0,
+      "skillAttackCoolDown": 10,
+      "maxBullets": 4
+    }
+  ],
+  "normalAttackCoolDown": 2,
+  "projectileRadius": 0.3
 }

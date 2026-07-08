@@ -3,10 +3,6 @@ using Network;
 
 namespace Core.Player {
     public class PlayerData {
-        public enum CharacterType {
-            A, B, C
-        }
-        
         [JsonProperty("Id")] public string Id { get; set; }
         [JsonProperty("Team")] public string Team { get; set; }
         [JsonProperty("Slot")] public int Slot { get; set; }
@@ -18,6 +14,5 @@ namespace Core.Player {
         [JsonProperty("HP")] public float Hp { get; set; }
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
         [JsonProperty("IsDead")] public bool IsDead { get; set; }
-        public CharacterType Type { get; set; }
     }
 }
