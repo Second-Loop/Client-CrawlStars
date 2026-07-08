@@ -15,6 +15,7 @@ namespace Core.Player {
         public PlayerListener myListener;
         
         public string MyId { get; set; }
+        public string MyTeam { get; set; }
 
         public void Initialize(IReadOnlyList<ReadyPlayerDto> players) {
             ClearListeners();
@@ -28,10 +29,11 @@ namespace Core.Player {
                 var listener = ObjectPooling.Instance.Get<PlayerListener>(Constants.Player);
                 if (listener == null) continue;
 
-                listener.Initialize(player);
+                bool isMe = player.Id == MyId;
+                listener.Initialize(player, isMe);
                 playerListeners.Add(player.Id, listener);
 
-                if (player.Id == MyId) {
+                if (isMe) {
                     myListener = listener;
                 }
             }

@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Core.Player;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Managing;
@@ -30,6 +31,10 @@ namespace Popup {
                 response = await NetworkManager.Instance.MatchAsync(ct);
             } catch (Exception ex) {
                 await NetworkManager.Instance.DisconnectSocketAsync();
+
+                PlayerManager.Instance.MyId = null;
+                PlayerManager.Instance.MyTeam = null;
+
                 if (ex is not OperationCanceledException) {
                     RequestPopupClosing();
                     Debug.LogError(ex);

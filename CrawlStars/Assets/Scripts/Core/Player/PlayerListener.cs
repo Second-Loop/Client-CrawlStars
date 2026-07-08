@@ -6,14 +6,26 @@ namespace Core.Player {
     public class PlayerListener : MonoBehaviour {
         [SerializeField] private Transform body;
         [SerializeField] private StatusBar hpBar;
+        [SerializeField] private SpriteRenderer aura;
 
         private bool isStatusInitialized;
 
+        private static readonly Color32 MyAuraColor = new Color32(23, 212, 29, 150);
+        private static readonly Color32 MySideAuraColor = new Color32(0, 198, 255, 150);
+        private static readonly Color32 OtherSideAuraColor = new Color32(255, 0, 0, 150);
+        
         // 임시
         public float Hp => hpBar.Value;
 
-        public void Initialize(ReadyPlayerDto playerData) {
+        public void Initialize(ReadyPlayerDto playerData, bool isMe) {
             isStatusInitialized = false;
+
+            bool isMySide = playerData.Team == PlayerManager.Instance.MyTeam;
+
+            aura.color = isMe ? MyAuraColor : (isMySide ? MySideAuraColor : OtherSideAuraColor);
+            hpBar.gameObject.SetActive(false);
+            hpBar.SetColor(isMe, isMySide);
+
             MoveTo(playerData.SpawnPosition.ToVector2());
         }
 

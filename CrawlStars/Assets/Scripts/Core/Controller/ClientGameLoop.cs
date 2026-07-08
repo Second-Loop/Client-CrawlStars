@@ -15,6 +15,8 @@ namespace Core.Controller {
         public Action<Vector2, bool> OnDetectInput;
         public Action<Vector2, Vector2> OnSendInput;
 
+        private IReadOnlyList<ReadyPlayerDto> curPlayers;
+
         private float accumulator;
         private bool isActive;
         private bool isInitialized;
@@ -54,6 +56,7 @@ namespace Core.Controller {
                 return false;
             }
 
+            curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
             isInitialized = true;
@@ -101,7 +104,7 @@ namespace Core.Controller {
 
             switch (snapshot.Status) {
                 case "starting":
-                    var param = new CountdownPopup.Param(snapshot.Countdown);
+                    var param = new CountdownPopup.Param(curPlayers, snapshot.Countdown);
                     PopupManager.Instance.ShowAsync(nameof(CountdownPopup), param).Forget();
                     return;
                 case "started":
