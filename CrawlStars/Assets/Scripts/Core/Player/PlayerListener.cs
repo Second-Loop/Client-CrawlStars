@@ -10,8 +10,8 @@ namespace Core.Player {
 
         private bool isStatusInitialized;
 
-        private static readonly Color32 MySideAuraColor = new Color32(0, 255, 255, 255);
-        private static readonly Color32 OtherSideAuraColor = new Color32(255, 115, 120, 255);
+        private static readonly Color32 MySideAuraColor = new Color32(0, 198, 255, 150);
+        private static readonly Color32 OtherSideAuraColor = new Color32(255, 0, 0, 150);
 
         // 임시
         public float Hp => hpBar.Value;
