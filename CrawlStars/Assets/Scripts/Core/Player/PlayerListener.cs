@@ -4,7 +4,8 @@ using Utility;
 
 namespace Core.Player {
     public class PlayerListener : MonoBehaviour {
-        [SerializeField] private Transform body;
+        [SerializeField] private Transform bodyRoot;
+        [SerializeField] private SpriteRenderer body;
         [SerializeField] private StatusBar hpBar;
         [SerializeField] private SpriteRenderer aura;
 
@@ -19,6 +20,11 @@ namespace Core.Player {
 
         public void Initialize(ReadyPlayerDto playerData, bool isMe) {
             isStatusInitialized = false;
+
+            var info = CharacterManager.Instance.GetCharacterInfo((CharacterManager.CharacterType)playerData.CharacterType);
+            if (info != null) {
+                body.sprite = SpriteCacheHelper.Get(info.iconSpriteName);
+            }
 
             bool isMySide = playerData.Team == PlayerManager.Instance.MyTeam;
 
@@ -48,7 +54,7 @@ namespace Core.Player {
             if (direction == Vector2.zero) return;
 
             float angle = MathUtil.GetAngle(direction);
-            body.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            bodyRoot.transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
         // 공격 모션임

@@ -28,6 +28,7 @@ namespace Network {
         [JsonProperty("Team")] public string Team { get; set; }
         [JsonProperty("Slot")] public int Slot { get; set; }
         [JsonProperty("SpawnPosition")] public Vector2Dto SpawnPosition { get; set; }
+        [JsonProperty("CharacterType")] public int CharacterType { get; set; }
     }
 
     public class ReadyAckMessageDto {

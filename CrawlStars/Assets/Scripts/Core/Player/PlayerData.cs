@@ -14,5 +14,6 @@ namespace Core.Player {
         [JsonProperty("HP")] public float Hp { get; set; }
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
         [JsonProperty("IsDead")] public bool IsDead { get; set; }
+        [JsonProperty("CharacterType")] public int CharacterType { get; set; }
     }
 }
