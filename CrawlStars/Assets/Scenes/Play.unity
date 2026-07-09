@@ -978,6 +978,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 148270069}
     m_Modifications:
+    - target: {fileID: 655498906598793556, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 655498906598793556, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 655498906598793556, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 655498906598793556, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 655498906598793556, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -187
+      objectReference: {fileID: 0}
+    - target: {fileID: 655498906598793556, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 187
+      objectReference: {fileID: 0}
     - target: {fileID: 3778781088909345652, guid: 8cd6a181149764f44bd218a3d159c1b7, type: 3}
       propertyPath: m_Name
       value: CooldownView
