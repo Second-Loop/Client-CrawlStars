@@ -13,7 +13,7 @@ namespace Core.Player {
         private bool IsFull => CurrentCharges >= MaxCharges;
         
         public float SkillProgress => IsSkillCharged ? 1f : Mathf.Clamp01(skillTimer / skillSeconds);
-        public bool IsSkillCharged { get; private set; }
+        public bool IsSkillCharged { get; private set; } = true;
 
         public CooldownController(int maxBullet, float normalSeconds, float skillSeconds) {
             MaxCharges = Mathf.Max(1, maxBullet);
