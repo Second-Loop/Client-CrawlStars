@@ -6,8 +6,8 @@ using Utility;
 public class AimRenderer : MonoBehaviour {
     [SerializeField] private Image aimLine;
     
-    private readonly Color32 normalColor = new Color32(255, 255, 255, 120);
-    private readonly Color32 skillColor = new Color32(255, 255, 0, 120);
+    private static readonly Color32 NormalColor = new Color32(255, 255, 255, 120);
+    private static readonly Color32 SkillColor = new Color32(255, 255, 0, 120);
 
     private const float ThicknessFactor = 120f;
 
@@ -17,7 +17,7 @@ public class AimRenderer : MonoBehaviour {
             return;
         }
 
-        aimLine.color = usedSkill ? skillColor : normalColor;
+        aimLine.color = usedSkill ? SkillColor : NormalColor;
         aimLine.rectTransform.sizeDelta = new Vector2(300f, GameConfig.ProjectileRadius * ThicknessFactor);
         float angle = MathUtil.GetAngle(attackDir);
         aimLine.rectTransform.localRotation = Quaternion.Euler(0f, 0f, angle);
