@@ -21,7 +21,7 @@ public class StatusBar : MonoBehaviour {
         this.maxValue = maxValue;
         barBg.fillAmount = 1f;
         barImage.fillAmount = 1f;
-        progressText.text = maxValue.ToString();
+        if (progressText) progressText.text = maxValue.ToString();
         gameObject.SetActive(true);
     }
 
@@ -34,8 +34,17 @@ public class StatusBar : MonoBehaviour {
         if (Mathf.Approximately(toPercent, barImage.fillAmount)) return;
 
         barImage.fillAmount = toPercent;
-        progressText.text = to.ToString();
+        if (progressText) progressText.text = to.ToString();
 
         barBg.DOFillAmount(toPercent, 0.5f);
+    }
+
+    public void SetNormalizedValue(float value, string text = null) {
+        value = Mathf.Clamp01(value);
+
+        barImage.fillAmount = value;
+        barBg.fillAmount = value;
+        if (progressText) progressText.text = text ?? Mathf.RoundToInt(value * maxValue).ToString();
+        gameObject.SetActive(true);
     }
 }

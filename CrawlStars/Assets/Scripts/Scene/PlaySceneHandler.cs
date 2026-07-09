@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Core.Player;
 using Managing;
 using Network;
 using Popup;
@@ -9,23 +10,30 @@ namespace Scene {
     public class PlaySceneHandler : BaseSceneHandler {
         [SerializeField] private BenchMarker benchMarker;
         [SerializeField] private AimRenderer aimRenderer;
+        [SerializeField] private CooldownView cooldownView;
         [SerializeField] private GameObject waitingCurtain;
 
         protected override void Start() {
             base.Start();
             GameManager.Instance.RegisterOnSendInput(benchMarker.OnPressKey);
             GameManager.Instance.RegisterOnDetectInput(aimRenderer.OnPressKey);
+
             NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
             NetworkManager.Instance.SnapshotReceived += HideWaitingCurtain;
-            
+
+            cooldownView.Initialize(GameManager.Instance.AttackCooldownSource);
+
             waitingCurtain.SetActive(true);
         }
 
         private void OnDestroy() {
             GameManager.Instance.UnregisterOnSendInput(benchMarker.OnPressKey);
             GameManager.Instance.UnregisterOnDetectInput(aimRenderer.OnPressKey);
+
             NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
             NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
+
+            cooldownView.Clear();
         }
 
         protected override async UniTask ClickLeaveInternal() {

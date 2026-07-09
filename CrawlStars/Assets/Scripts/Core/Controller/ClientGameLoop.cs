@@ -13,6 +13,9 @@ namespace Core.Controller {
         [SerializeField] private InputProvider inputProvider;
         [SerializeField] private AttackManager attackManager;
 
+        // 데이이터에만 접근 가능하도록 한정적으로 열어둠
+        public IAttackCooldownSource AttackCooldownSource => attackManager;
+
         public Action<Vector2, bool> OnDetectInput;
         public Action<Vector2, Vector2> OnSendInput;
 
