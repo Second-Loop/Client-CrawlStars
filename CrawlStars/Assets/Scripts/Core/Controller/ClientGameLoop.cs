@@ -42,7 +42,7 @@ namespace Core.Controller {
             accumulator += Time.deltaTime;
             if (accumulator >= InputInterval) {
                 if (GameManager.Instance.IsBotModeActivated) {
-                    BotController.Instance.SendInputAsync().Forget();
+                    BotController.Instance.SendInputAsync(attackManager).Forget();
                 } else {
                     SendInputAsync().Forget();
                 }
