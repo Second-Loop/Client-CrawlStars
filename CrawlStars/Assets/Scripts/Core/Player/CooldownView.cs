@@ -16,6 +16,7 @@ namespace Core.Player {
             this.source = source;
 
             normalAttackBar?.Initialize(100);
+            normalAttackBar?.SetDivider(source.MaxCharges);
             skillAttackBar?.Initialize(100);
 
             Refresh();

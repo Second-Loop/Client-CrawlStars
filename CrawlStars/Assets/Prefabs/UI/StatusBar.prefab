@@ -224,7 +224,7 @@ GameObject:
   - component: {fileID: 3867608872152314065}
   - component: {fileID: 1338135756236250944}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Divider (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -297,12 +297,12 @@ GameObject:
   m_Component:
   - component: {fileID: 1350175348332613834}
   m_Layer: 5
-  m_Name: Divider
+  m_Name: DividerRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1350175348332613834
 RectTransform:
   m_ObjectHideFlags: 0
@@ -338,7 +338,7 @@ GameObject:
   - component: {fileID: 2718847903700231667}
   - component: {fileID: 6005928466946846268}
   m_Layer: 5
-  m_Name: Image (2)
+  m_Name: Divider (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -496,6 +496,12 @@ MonoBehaviour:
   barBg: {fileID: 5132053503403134369}
   barImage: {fileID: 935633238040853191}
   progressText: {fileID: 7020410281938643617}
+  dividerRoot: {fileID: 2196442145213018762}
+  dividers:
+  - {fileID: 8164801317540005987}
+  - {fileID: 6085063741957757926}
+  - {fileID: 8163072191017091464}
+  - {fileID: 3652023775023286857}
 --- !u!1 &5222090191477531769
 GameObject:
   m_ObjectHideFlags: 0
@@ -583,7 +589,7 @@ GameObject:
   - component: {fileID: 1513196803135670801}
   - component: {fileID: 6918191185293778289}
   m_Layer: 5
-  m_Name: Image (3)
+  m_Name: Divider (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -658,7 +664,7 @@ GameObject:
   - component: {fileID: 4971354107501544555}
   - component: {fileID: 7571447336983434899}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: Divider (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

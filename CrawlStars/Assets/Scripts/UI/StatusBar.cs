@@ -8,6 +8,9 @@ public class StatusBar : MonoBehaviour {
     [SerializeField] private Image barImage;
     [SerializeField] private TextMeshProUGUI progressText;
 
+    [SerializeField] private GameObject dividerRoot;
+    [SerializeField] private RectTransform[] dividers;
+
     private int maxValue;
     
     private static readonly Color32 MyColor = new Color32(14, 164, 0, 255);
@@ -22,7 +25,30 @@ public class StatusBar : MonoBehaviour {
         barBg.fillAmount = 1f;
         barImage.fillAmount = 1f;
         if (progressText) progressText.text = maxValue.ToString();
+        if (dividerRoot) dividerRoot.SetActive(false);
         gameObject.SetActive(true);
+    }
+
+    public void SetDivider(int count) {
+        if (dividerRoot == null || dividers == null) return;
+
+        count = Mathf.Clamp(count, 1, 5);
+        int activeDividerCount = Mathf.Min(count - 1, dividers.Length);
+
+        dividerRoot.SetActive(activeDividerCount > 0);
+        for (int i = 0; i < dividers.Length; i++) {
+            var divider = dividers[i];
+            if (divider == null) continue;
+
+            bool isActive = i < activeDividerCount;
+            divider.gameObject.SetActive(isActive);
+            if (!isActive) continue;
+
+            float normalizedPosition = (i + 1) / (float)count;
+            divider.anchorMin = new Vector2(normalizedPosition, divider.anchorMin.y);
+            divider.anchorMax = new Vector2(normalizedPosition, divider.anchorMax.y);
+            divider.anchoredPosition = new Vector2(0f, divider.anchoredPosition.y);
+        }
     }
 
     public void SetColor(bool isMe, bool isMySide) {

@@ -25,6 +25,6 @@
       "maxBullets": 4
     }
   ],
-  "normalAttackCoolDown": 2,
+  "normalAttackCoolDown": 1,
   "projectileRadius": 0.3
 }
