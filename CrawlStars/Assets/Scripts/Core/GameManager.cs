@@ -16,6 +16,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     private bool isEnding;
 
     public bool IsBotModeActivated = false;
+    public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
         MapLoader.SetCachedMapData(readyEvent.Map);

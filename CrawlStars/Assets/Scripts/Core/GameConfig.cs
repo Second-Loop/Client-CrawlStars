@@ -21,6 +21,7 @@ namespace Core {
         public static float TileSize { get; private set; }
         public static float PlayerRadius { get; private set; }
         public static PlayerConfig[] PlayerConfigs { get; set; }
+        public static int NormalAttackCoolDown { get; private set; }
         public static float ProjectileRadius { get; private set; }
 
         public static async UniTask<bool> LoadAsync() {
@@ -45,6 +46,7 @@ namespace Core {
             TileSize = config.TileSize;
             PlayerRadius = config.PlayerRadius;
             PlayerConfigs = config.characters ?? Array.Empty<PlayerConfig>();
+            NormalAttackCoolDown = config.normalAttackCoolDown;
             ProjectileRadius = config.ProjectileRadius;
             return true;
         }

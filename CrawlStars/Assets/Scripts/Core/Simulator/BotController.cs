@@ -33,8 +33,18 @@ namespace Core.Simulator {
             lastAttackTime = -AttackInterval;
         }
 
-        public async UniTask SendInputAsync() {
+        public async UniTask SendInputAsync(AttackManager attackManager) {
             (Vector2 moveDirection, Vector2 attackDirection) = Update();
+            bool usedSkill = false;
+
+            // 쿨타임 체크
+            if (attackDirection != Vector2.zero) {
+                if (attackManager.TrySkillAttack()) {
+                    usedSkill = true;
+                } else if (!attackManager.TryNormalAttack()) {
+                    attackDirection = Vector2.zero;
+                }
+            }
 
             await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
                 MoveDir = new Vector2Dto(moveDirection),
