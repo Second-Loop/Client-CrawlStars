@@ -11,14 +11,15 @@ namespace Core.Map {
             HalfTileSize * (mapData.height - 1)
         );
 
-        public static bool IsWallTile(int x, int y) {
+        public static bool IsPathBlockedTile(int x, int y) {
             var mapData = CachedMapData;
             if (mapData == null) return true;
 
             if (x < 0 || x >= mapData.width) return true;
             if (y < 0 || y >= mapData.height) return true;
 
-            return mapData.map[y][x] == (int)Tile.TileType.Wall;
+            int tileType = mapData.map[y][x];
+            return (Tile.TileType)tileType is Tile.TileType.Wall or Tile.TileType.Water;
         }
 
         public static bool IsInBush(Vector2Int pos) => IsInBush(pos.x, pos.y);

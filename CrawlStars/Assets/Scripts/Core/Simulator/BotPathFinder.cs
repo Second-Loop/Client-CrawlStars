@@ -25,7 +25,11 @@ namespace Core.Simulator {
             Vector2Int start = MapHelper.GetMapIdx(fromWorld);
             Vector2Int goal = MapHelper.GetMapIdx(toWorld);
 
-            if (start == goal || MapHelper.IsWallTile(start.x, start.y) || MapHelper.IsWallTile(goal.x, goal.y)) {
+            if (start == goal || MapHelper.IsPathBlockedTile(start.x, start.y)) {
+                return GetDirectDir(fromWorld, toWorld);
+            }
+
+            if (MapHelper.IsPathBlockedTile(goal.x, goal.y)) {
                 return GetDirectDir(fromWorld, toWorld);
             }
 
@@ -64,7 +68,7 @@ namespace Core.Simulator {
 
                 foreach (Vector2Int direction in Directions) {
                     Vector2Int next = current.Pos + direction;
-                    if (MapHelper.IsWallTile(next.x, next.y) || closed.Contains(next)) continue;
+                    if (MapHelper.IsPathBlockedTile(next.x, next.y) || closed.Contains(next)) continue;
 
                     // G는 누적 비용이기 때문에 현재 비용에 다음 거리인 1을 누적해서 더해줌
                     int nextCost = current.G + 1;
