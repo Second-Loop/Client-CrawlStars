@@ -56,7 +56,7 @@ namespace Core.Simulator {
         private (Vector2 moveDirection, Vector2 attackDirection) Update() {
             var curPlayers = PlayerManager.Instance.playerListeners;
             var curProjectiles = ProjectileManager.Instance.projectileListeners;
-            var curMe = PlayerManager.Instance.myListener;
+            var curMe = PlayerManager.Instance.MyListener;
 
             if (curMe == null) {
                 StoreProjectilePositions(curProjectiles);
@@ -102,7 +102,7 @@ namespace Core.Simulator {
         }
 
         private Vector2 GetCachedMoveDirection(Vector2 fromWorld, Vector2 toWorld) {
-            if (MapLoader.CachedMapData == null) {
+            if (MapHelper.CachedMapData == null) {
                 return BotPathFinder.GetMoveDirection(fromWorld, toWorld);
             }
 

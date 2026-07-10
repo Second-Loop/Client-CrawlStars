@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Core.Map;
 using Core.Player;
 using Core.Projectile;
 using Core.Simulator;
@@ -133,6 +134,7 @@ namespace Core.Controller {
             }
 
             PlayerManager.Instance.ApplySnapshot(snapshot.Players);
+            BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
 
             if (!isActive) {

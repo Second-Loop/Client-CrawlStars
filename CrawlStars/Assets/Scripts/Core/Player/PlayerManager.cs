@@ -12,8 +12,8 @@ namespace Core.Player {
 
         // 임시 public
         public readonly Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
-        public PlayerListener myListener;
-        
+
+        public PlayerListener MyListener { get; private set; }
         public string MyId { get; set; }
         public string MyTeam { get; set; }
 
@@ -34,7 +34,7 @@ namespace Core.Player {
                 playerListeners.Add(player.Id, listener);
 
                 if (isMe) {
-                    myListener = listener;
+                    MyListener = listener;
                 }
             }
         }
@@ -70,12 +70,12 @@ namespace Core.Player {
         }
 
         public void FocusCamera() {
-            if (myListener == null) {
+            if (MyListener == null) {
                 Debug.LogError("PlayerManager.FocusCamera::Cannot find my listener object");
                 return;
             }
 
-            Cache.CameraController.TargetPlayer = myListener.transform;
+            Cache.CameraController.TargetPlayer = MyListener.transform;
         }
 
         public void ClearListeners() {
@@ -84,7 +84,9 @@ namespace Core.Player {
             }
             playerListeners.Clear();
             Cache.CameraController.TargetPlayer = null;
-            myListener = null;
+            MyListener = null;
         }
+
+        public bool GetListener(string id, out PlayerListener listener) => playerListeners.TryGetValue(id, out listener);
     }
 }

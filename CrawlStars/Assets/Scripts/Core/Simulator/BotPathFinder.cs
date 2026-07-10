@@ -18,7 +18,7 @@ namespace Core.Simulator {
         private const float MinDirectionSqrMagnitude = 0.0001f;
 
         public static Vector2 GetMoveDirection(Vector2 fromWorld, Vector2 toWorld) {
-            if (MapLoader.CachedMapData == null) {
+            if (MapHelper.CachedMapData == null) {
                 return GetDirectDir(fromWorld, toWorld);
             }
 
@@ -46,7 +46,7 @@ namespace Core.Simulator {
             var closed = new HashSet<Vector2Int>();
             var bestCosts = new Dictionary<Vector2Int, int> { {start, 0} };
 
-            MapData mapData = MapLoader.CachedMapData;
+            MapData mapData = MapHelper.CachedMapData;
             int maxIterations = mapData.width * mapData.height;
             int iterations = 0;
 

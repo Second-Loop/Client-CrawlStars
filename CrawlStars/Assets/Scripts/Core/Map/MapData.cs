@@ -5,9 +5,5 @@ namespace Core.Map {
         public int index;
         public int maxPlayers;
         public int[][] map;
-
-        public enum TileType {
-            Ground, Wall, SpawnPoint
-        }
     }
 }
