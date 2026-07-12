@@ -19,9 +19,12 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
-        MapLoader.SetCachedMapData(readyEvent.Map);
+        MapHelper.CachedMapData = readyEvent.Map; 
         mapRenderer.Render(readyEvent.Map);
+
         clientGameLoop.Initialize(readyEvent.Players);
+        BushVisibilityController.Instance.Initialize();
+
         NetworkManager.Instance.GameEndReceived += HandleGameEnd;
 
         if (IsBotModeActivated) {

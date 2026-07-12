@@ -4,7 +4,7 @@ using Utility;
 namespace Core.Map {
     public class Tile : MonoBehaviour {
         public enum TileType {
-            Ground, Wall, Bush, Water, SpawnPoint
+            Ground, Wall, SpawnPoint, Bush, Water
         }
         
         [SerializeField] public SpriteRenderer spriteRenderer;
@@ -19,18 +19,11 @@ namespace Core.Map {
         }
 
         private void SetSprite(TileType tileType) {
-            string spriteName;
-
-            switch (tileType) {
-                case TileType.Wall:
-                    spriteName = "Wall";
-                    break;
-                default:
-                case TileType.Ground:
-                    spriteName = "Ground";
-                    break;
+            if (tileType == TileType.SpawnPoint) {
+                tileType = TileType.Ground;
             }
 
+            string spriteName = tileType.ToString();
             var sprite = SpriteCacheHelper.Get(spriteName);
             if (sprite == null) {
                 Debug.LogError($"Tile.SetSprite::Cannot find sprite {spriteName} / tileType: {tileType}");
