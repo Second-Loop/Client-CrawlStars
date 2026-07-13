@@ -16,10 +16,15 @@ namespace Core.Simulator {
         private Vector2Int cachedPathStart = InvalidPathTile;
         private Vector2Int cachedPathGoal = InvalidPathTile;
         private Vector2 cachedMoveDirection;
+        private Vector2 exploreDestination;
+        private bool hasExploreDestination;
         private float lastAttackTime;
 
         private const float AttackRange = 5f;
+        private const float DetectionRange = 15f;
         private const float AttackInterval = 0.3f;
+        private const float ExploreArrivalDistance = 0.25f;
+        private const int ExploreDestinationAttempts = 20;
         private const float RetreatHpThreshold = 0.2f;
         private const float RetreatDistance = 6f;
         private const float ProjectileLookAheadDistance = 8f;
@@ -30,6 +35,7 @@ namespace Core.Simulator {
         public void Initialize() {
             prevProjectilePositions.Clear();
             ClearCachedPath();
+            hasExploreDestination = false;
             lastAttackTime = -AttackInterval;
         }
 
@@ -66,12 +72,8 @@ namespace Core.Simulator {
             PlayerListener target = FindNearestTarget(curPlayers, curMe);
             Vector2 targetDirection = target == null ? Vector2.zero 
                 : (target.transform.position - curMe.transform.position).normalized;
+            if (target != null) hasExploreDestination = false;
 
-            if (target == null) {
-                StoreProjectilePositions(curProjectiles);
-                return (Vector2.zero, Vector2.zero);
-            }
-            
             Vector2 moveDirection = Vector2.zero;
             Vector2 attackDirection = Vector2.zero;
 
@@ -79,26 +81,57 @@ namespace Core.Simulator {
             if (TryGetDodgeDirection(curProjectiles, curMe, out Vector2 dodgeDirection)) {
                 moveDirection = dodgeDirection;
             }
+            // 주변에 적이 없으면 탐색
+            else if (target == null) {
+                moveDirection = GetExploreDirection(curMe.transform.position);
+            }
             // 체력이 낮으면 가장 가까운 적 반대 방향으로 도망
             else if (ShouldRetreat(curMe)) {
                 var retreatTarget = (Vector2)curMe.transform.position - targetDirection * RetreatDistance;
                 var retreatDirection = GetCachedMoveDirection(curMe.transform.position, retreatTarget);
                 moveDirection = retreatDirection;
             }
-            // 추격
+            // 적이 근처에 있으면 추격
             else {
                 var chaseDirection = GetCachedMoveDirection(curMe.transform.position, target.transform.position);
                 moveDirection =  chaseDirection;
             }
 
             // 공격 범위 체크
-            if (IsInAttackRange(curMe, target) && CanAttack()) {
+            if (target != null && IsInAttackRange(curMe, target) && CanAttack()) {
                 attackDirection = targetDirection;
                 lastAttackTime = Time.time;
             }
 
             StoreProjectilePositions(curProjectiles);
             return (moveDirection, attackDirection);
+        }
+
+        private Vector2 GetExploreDirection(Vector2 fromWorld) {
+            MapData mapData = MapHelper.CachedMapData;
+            if (mapData == null) return Vector2.zero;
+
+            if (!hasExploreDestination ||
+                (exploreDestination - fromWorld).sqrMagnitude <= ExploreArrivalDistance * ExploreArrivalDistance) {
+                hasExploreDestination = TrySetExploreDestination(mapData);
+            }
+
+            return hasExploreDestination
+                ? GetCachedMoveDirection(fromWorld, exploreDestination)
+                : Vector2.zero;
+        }
+
+        private bool TrySetExploreDestination(MapData mapData) {
+            for (int i = 0; i < ExploreDestinationAttempts; ++i) {
+                int x = Random.Range(0, mapData.width);
+                int y = Random.Range(0, mapData.height);
+                if (MapHelper.IsPathBlockedTile(x, y)) continue;
+
+                exploreDestination = MapHelper.GetWorldPos(x, y);
+                return true;
+            }
+
+            return false;
         }
 
         private Vector2 GetCachedMoveDirection(Vector2 fromWorld, Vector2 toWorld) {
@@ -130,7 +163,7 @@ namespace Core.Simulator {
 
         private PlayerListener FindNearestTarget(Dictionary<string, PlayerListener> players, PlayerListener curMe) {
             PlayerListener nearest = null;
-            float nearestSqrDistance = float.MaxValue;
+            float nearestSqrDistance = DetectionRange * DetectionRange;
             Vector2 myPos = curMe.transform.position;
 
             foreach (var player in players) {
