@@ -103,6 +103,7 @@ namespace Core.Controller {
 
             OnSendInput?.Invoke(moveDirection, attackDirection);
 
+            // 추후 usedSkill 보내기 
             await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
                 MoveDir = new Vector2Dto(moveDirection),
                 AttackDir = new Vector2Dto(attackDirection),

@@ -20,7 +20,6 @@ namespace Core.Simulator {
         private bool hasExploreDestination;
         private float lastAttackTime;
 
-        private const float AttackRange = 5f;
         private const float DetectionRange = 15f;
         private const float AttackInterval = 0.3f;
         private const float ExploreArrivalDistance = 0.25f;
@@ -40,7 +39,7 @@ namespace Core.Simulator {
         }
 
         public async UniTask SendInputAsync(AttackManager attackManager) {
-            (Vector2 moveDirection, Vector2 attackDirection) = Update();
+            (Vector2 moveDirection, Vector2 attackDirection) = Update(attackManager);
             bool usedSkill = false;
 
             // 쿨타임 체크
@@ -52,6 +51,7 @@ namespace Core.Simulator {
                 }
             }
 
+            // 추후 usedSkill 보내기
             await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
                 MoveDir = new Vector2Dto(moveDirection),
                 AttackDir = new Vector2Dto(attackDirection),
@@ -59,7 +59,7 @@ namespace Core.Simulator {
             });
         }
 
-        private (Vector2 moveDirection, Vector2 attackDirection) Update() {
+        private (Vector2 moveDirection, Vector2 attackDirection) Update(AttackManager attackManager) {
             var curPlayers = PlayerManager.Instance.playerListeners;
             var curProjectiles = ProjectileManager.Instance.projectileListeners;
             var curMe = PlayerManager.Instance.MyListener;
@@ -98,7 +98,7 @@ namespace Core.Simulator {
             }
 
             // 공격 범위 체크
-            if (target != null && IsInAttackRange(curMe, target) && CanAttack()) {
+            if (target != null && IsInAttackRange(curMe, target, attackManager) && CanAttack()) {
                 attackDirection = targetDirection;
                 lastAttackTime = Time.time;
             }
@@ -180,9 +180,15 @@ namespace Core.Simulator {
             return nearest;
         }
 
-        private bool IsInAttackRange(PlayerListener curMe, PlayerListener target) {
+        private bool IsInAttackRange(PlayerListener curMe, PlayerListener target, AttackManager attackManager) {
+            CharacterInfo.Definition character = CharacterManager.Instance.MyCharacter;
+            if (character == null) return false;
+
+            float attackDistance = attackManager.IsSkillCharged
+                ? character.skillAttackDistance
+                : character.normalAttackDistance;
             float sqrDistance = ((Vector2)(target.transform.position - curMe.transform.position)).sqrMagnitude;
-            return sqrDistance <= AttackRange * AttackRange;
+            return sqrDistance <= attackDistance * attackDistance;
         }
 
         private bool ShouldRetreat(PlayerListener curMe) {
