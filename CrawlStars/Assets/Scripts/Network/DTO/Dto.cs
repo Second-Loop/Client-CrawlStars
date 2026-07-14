@@ -17,6 +17,25 @@ namespace Network {
         [JsonProperty("maxPlayers")] public int MaxPlayers { get; set; }
     }
 
+    // GC Alloc 감소를 위해 서버에서 수신하는 WebSocket 메시지를 한 번의 역직렬화로 분기하기 위한 통합 DTO
+    public sealed class SocketMessageDto {
+        [JsonProperty("Type")] public string Type { get; set; }
+
+        // Ready
+        [JsonProperty("Map")] public MapData Map { get; set; }
+        [JsonProperty("Players")] public ReadyPlayerDto[] ReadyPlayers { get; set; }
+
+        // snapshot
+        [JsonProperty("Snapshot")] public SnapshotDto Snapshot { get; set; }
+
+        // GameEnd
+        [JsonProperty("PlayerId")] public string PlayerId { get; set; }
+        [JsonProperty("Result")] public string Result { get; set; }
+
+        // error
+        [JsonProperty("Error")] public ApiErrorDto Error { get; set; }
+    }
+
     public class ReadyEventMessageDto {
         [JsonProperty("Type")] public string Type { get; set; }
         [JsonProperty("Map")] public MapData Map { get; set; }
@@ -76,11 +95,9 @@ namespace Network {
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
     }
 
-    public class Vector2Dto {
+    public struct Vector2Dto {
         [JsonProperty("x")] public float X { get; set; }
         [JsonProperty("y")] public float Y { get; set; }
-
-        public Vector2Dto() { }
 
         public Vector2Dto(Vector2 vector) {
             X = vector.x;

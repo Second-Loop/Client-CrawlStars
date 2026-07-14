@@ -38,7 +38,7 @@ namespace Core.Simulator {
             lastAttackTime = -AttackInterval;
         }
 
-        public async UniTask SendInputAsync(AttackManager attackManager) {
+        public async UniTask SendInputAsync(AttackManager attackManager, System.Action<Vector2, Vector2> onSendInput) {
             (Vector2 moveDirection, Vector2 attackDirection) = Update(attackManager);
             bool usedSkill = false;
 
@@ -50,6 +50,8 @@ namespace Core.Simulator {
                     attackDirection = Vector2.zero;
                 }
             }
+
+            onSendInput?.Invoke(moveDirection, attackDirection);
 
             // 추후 usedSkill 보내기
             await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {

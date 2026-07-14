@@ -23,6 +23,7 @@ namespace Core.Controller {
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
 
         private float accumulator;
+        private Vector2 previousMoveDirection;
         private bool isActive;
         private bool isInitialized;
 
@@ -41,13 +42,13 @@ namespace Core.Controller {
             if (!isActive) return;
 
             accumulator += Time.deltaTime;
-            if (accumulator >= InputInterval) {
-                if (GameManager.Instance.IsBotModeActivated) {
-                    BotController.Instance.SendInputAsync(attackManager).Forget();
-                } else {
-                    SendInputAsync().Forget();
+            if (GameManager.Instance.IsBotModeActivated) {
+                if (accumulator >= InputInterval) {
+                    BotController.Instance.SendInputAsync(attackManager, OnSendInput).Forget();
+                    accumulator %= InputInterval;
                 }
-                accumulator -= InputInterval;
+            } else {
+                SendInputAsync().Forget();
             }
 
             OnDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
@@ -85,6 +86,7 @@ namespace Core.Controller {
         public void Clear() {
             SetActive(false);
             accumulator = 0;
+            previousMoveDirection = Vector2.zero;
             isInitialized = false;
         }
 
@@ -101,7 +103,15 @@ namespace Core.Controller {
                 }
             }
 
+            // 입력 방향이 바뀌었거나 공격 키가 들어오면 interval를 무시하고 즉시 보내서 지연률 최소화
+            bool isMoveChanged = (moveDirection - previousMoveDirection).sqrMagnitude > Mathf.Epsilon;
+            previousMoveDirection = moveDirection;
+            bool shouldSendImmediately = isMoveChanged || attackDirection != Vector2.zero;
+            if (!shouldSendImmediately && accumulator < InputInterval) return;
+
             OnSendInput?.Invoke(moveDirection, attackDirection);
+
+            accumulator = shouldSendImmediately ? 0f : accumulator % InputInterval;
 
             // 추후 usedSkill 보내기 
             await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {

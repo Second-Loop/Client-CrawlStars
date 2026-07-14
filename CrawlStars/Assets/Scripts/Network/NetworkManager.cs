@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Network {
+    [DefaultExecutionOrder(-200)] // 수신 메시지를 게임 로직 Update 전에 dispatch
     public class NetworkManager : SingletonMonoBehaviour<NetworkManager> {
         private NetworkConfig config;
         private WebSocketClient socketClient;
@@ -136,47 +137,47 @@ namespace Network {
 
         private void HandleSocketMessage(string message) {
             try {
-                var envelope = JsonConvert.DeserializeObject<MessageEnvelope>(message);
-                switch (envelope?.Type) {
+                var socketMessage = JsonConvert.DeserializeObject<SocketMessageDto>(message);
+
+                switch (socketMessage?.Type) {
                     case "Ready":   // 모든 유저 매칭됨
-                        var readyEvent = JsonConvert.DeserializeObject<ReadyEventMessageDto>(message);
-                        if (readyEvent?.Map == null || readyEvent.Players == null) {
+                        if (socketMessage.Map == null || socketMessage.ReadyPlayers == null) {
                             Debug.LogWarning("NetworkManager.HandleSocketMessage::ready event data is null");
                             return;
                         }
-                        matchedReadyEvent = readyEvent;
+                        matchedReadyEvent = new ReadyEventMessageDto {
+                            Type = socketMessage.Type,
+                            Map = socketMessage.Map,
+                            Players = socketMessage.ReadyPlayers
+                        };
                         IsMatched = true;
                         break;
                     case "snapshot":
-                        var snapshotMessage = JsonConvert.DeserializeObject<SnapshotMessageDto>(message);
-                        if (snapshotMessage?.Snapshot == null) {
+                        if (socketMessage.Snapshot == null) {
                             Debug.LogWarning($"NetworkManager.HandleSocketMessage::message snapshot is null");
                             return;
                         }
-                        SnapshotReceived?.Invoke(snapshotMessage.Snapshot);
+                        SnapshotReceived?.Invoke(socketMessage.Snapshot);
                         break;
                     case "GameEnd":
-                        var gameEndMessage = JsonConvert.DeserializeObject<GameEndMessageDto>(message);
-                        if (gameEndMessage == null ||
-                            string.IsNullOrEmpty(gameEndMessage.PlayerId) ||
-                            string.IsNullOrEmpty(gameEndMessage.Result)) {
+                        if (string.IsNullOrEmpty(socketMessage.PlayerId) || string.IsNullOrEmpty(socketMessage.Result)) {
                             Debug.LogWarning("NetworkManager.HandleSocketMessage::game end data is invalid");
                             return;
                         }
+                        var gameEndMessage = new GameEndMessageDto {
+                            Type = socketMessage.Type,
+                            PlayerId = socketMessage.PlayerId,
+                            Result = socketMessage.Result
+                        };
                         GameEndReceived?.Invoke(gameEndMessage);
                         break;
                     case "error":
-                        var errorMessage = JsonConvert.DeserializeObject<ErrorMessageDto>(message);
-                        Debug.LogError($"WebSocket API Error: {errorMessage?.Error?.Code}/{errorMessage?.Error?.Message}");
+                        Debug.LogError($"WebSocket API Error: {socketMessage.Error?.Code}/{socketMessage.Error?.Message}");
                         break;
                 }
             } catch (JsonException e) {
                 Debug.LogError($"NetworkManager.HandleSocketMessage::invalid message/{e.Message}");
             }
-        }
-
-        private sealed class MessageEnvelope {
-            [JsonProperty("Type")] public string Type { get; set; }
         }
     }
 }
