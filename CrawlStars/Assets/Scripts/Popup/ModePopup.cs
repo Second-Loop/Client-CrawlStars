@@ -20,9 +20,10 @@ public class ModePopup : PopupHandler {
             return;
         }
 
-        foreach (var item in info.items) {
+        for (int i = 0; i < info.items.Length; i++) {
             var modeItem = ObjectPooling.Instance.Get<ModeItem>(nameof(ModeItem), itemRoot);
-            modeItem.SetData(item, () => RequestPopupClosing());
+            modeItem.SetData(info.items[i], () => RequestPopupClosing());
+            modeItem.SetBgColor((SelectItem.BgColor)i);
             modeItems.Add(modeItem);
         }
 

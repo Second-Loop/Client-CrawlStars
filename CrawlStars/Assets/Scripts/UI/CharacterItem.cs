@@ -9,26 +9,24 @@ using UnityEngine.UI;
 using Utility;
 using CharacterInfo = Core.CharacterInfo;
 
-public class CharacterItem : MonoBehaviour {
-    [SerializeField] private Button button;
-    [SerializeField] private Image icon;
-    [SerializeField] private TextMeshProUGUI characterName;
-    [SerializeField] private TextMeshProUGUI description;
-
+public class CharacterItem : SelectItem {
     public void SetData(KeyValuePair<CharacterManager.CharacterType, CharacterInfo.Definition> info, UnityAction buttonAction) {
         icon.sprite = SpriteCacheHelper.Get(info.Value.iconSpriteName);
-        characterName.text = info.Key.ToString();
-        description.text = info.Value.description;
-        button.onClick.AddListener(() => OnClickButton(info.Key));
+        if (icon.sprite != null) {
+            icon.SetNativeSize();
+        }
+        title.text = info.Key.ToString();
+        subTitle.text = info.Value.description;
+        button.onClick.AddListener(() => OnClickButton((int)info.Key));
         button.onClick.AddListener(buttonAction);
     }
 
-    public void Release() {
+    public override void Release() {
         icon.sprite = null;
         button.onClick.RemoveAllListeners();
     }
 
-    private void OnClickButton(CharacterManager.CharacterType character) {
-        CharacterManager.Instance.SetMyCharacter(character);
+    protected override void OnClickButton(int selectedItem) {
+        CharacterManager.Instance.SetMyCharacter((CharacterManager.CharacterType)selectedItem);
     }
 }

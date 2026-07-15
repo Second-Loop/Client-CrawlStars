@@ -20,10 +20,13 @@ public class CharacterPopup : PopupHandler {
             return;
         }
 
+        int i = 0;
         foreach (var item in info) {
             var characterItem = ObjectPooling.Instance.Get<CharacterItem>(nameof(CharacterItem), itemRoot);
             characterItem.SetData(item, () => RequestPopupClosing());
+            characterItem.SetBgColor((SelectItem.BgColor)i);
             characterItems.Add(characterItem);
+            ++i;
         }
 
         spacer.SetActive(info.Count < 3);
