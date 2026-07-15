@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 00d00a992dac18b4c97f7df246766bef
+guid: d950185aeefdf7d40a8812265456f055
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5890285294879058642
-    second: whitebox_0
+      213: 7780264574027006942
+    second: card2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: whitebox_0
+      name: card2_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 3
-        height: 3
+        y: 36
+        width: 600
+        height: 528
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 1, y: 1, z: 1, w: 1}
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e25d60d7bb0814ea0800000000000000
-      internalID: -5890285294879058642
+      spriteID: ed38f61986d09fb60800000000000000
+      internalID: 7780264574027006942
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: cc87ffd11ed211243a57f1389eae9df3
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      whitebox_0: -5890285294879058642
+      card2_0: 7780264574027006942
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

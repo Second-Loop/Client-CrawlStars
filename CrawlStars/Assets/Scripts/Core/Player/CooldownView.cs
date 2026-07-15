@@ -15,15 +15,16 @@ namespace Core.Player {
 
             this.source = source;
 
-            normalAttackBar?.Initialize(100);
-            normalAttackBar?.SetDivider(source.MaxCharges);
-            skillAttackBar?.Initialize(100);
+            normalAttackBar.Initialize(100);
+            normalAttackBar.SetDivider(source.MaxCharges);
+            skillAttackBar.Initialize(100);
 
             Refresh();
         }
 
         public void Clear() {
             source = null;
+            normalAttackBar.Dispose();
         }
 
         private void LateUpdate() {

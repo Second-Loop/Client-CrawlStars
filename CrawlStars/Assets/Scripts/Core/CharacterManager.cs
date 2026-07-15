@@ -8,7 +8,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace Core {
     public class CharacterManager {
         public enum CharacterType {
-            A, B, C
+            Shelly, Colt, Lily
         }
 
         private static CharacterManager instance;
@@ -46,8 +46,8 @@ namespace Core {
             MyCharacter = GetCharacterInfo(type);
 
             if (MyCharacter == null) {
-                Debug.LogError($"CharacterManager.SetMyCharacter::there is no data for {type}, so fallback to {CharacterType.A} type");
-                type = CharacterType.A;
+                Debug.LogError($"CharacterManager.SetMyCharacter::there is no data for {type}, so fallback to {CharacterType.Shelly} type");
+                type = CharacterType.Shelly;
                 MyCharacterType = type;
                 MyCharacter = GetCharacterInfo(type);
             }

@@ -15,10 +15,10 @@ MonoBehaviour:
   items:
   - characterType: 0
     description: Damage Dealer
-    iconSpriteName: Character_A
+    iconSpriteName: Character_Shelly
   - characterType: 1
-    description: Assasin
-    iconSpriteName: Character_B
-  - characterType: 2
     description: Damage Dealer
-    iconSpriteName: Character_C
+    iconSpriteName: Character_Colt
+  - characterType: 2
+    description: Assasin
+    iconSpriteName: Character_Lily
