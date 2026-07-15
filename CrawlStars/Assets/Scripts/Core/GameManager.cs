@@ -19,8 +19,8 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
-        MapHelper.CachedMapData = readyEvent.Map; 
-        mapRenderer.Render(readyEvent.Map);
+        MapHelper.CachedMapData = MapLoader.LoadMapFile(0);
+        mapRenderer.Render(MapHelper.CachedMapData);
 
         clientGameLoop.Initialize(readyEvent.Players);
         BushVisibilityController.Instance.Initialize();

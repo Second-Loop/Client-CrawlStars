@@ -16,8 +16,8 @@ MonoBehaviour:
   - gameMode: 0
     title: Solo ShowDown
     subTitle: 6 players
-    iconSpriteName: ModeIcon_Solo
+    iconSpriteName: icon_solo
   - gameMode: 1
     title: Team Battle
     subTitle: 3v3 (6 players)
-    iconSpriteName: ModeIcon_Team
+    iconSpriteName: icon_team

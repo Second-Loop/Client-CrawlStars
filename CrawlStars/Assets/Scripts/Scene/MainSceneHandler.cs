@@ -4,6 +4,7 @@ using Popup;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Utility;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -16,6 +17,8 @@ namespace Scene {
         [SerializeField] private Button selectModeButton;
 
         [SerializeField] private TextMeshProUGUI selectedCharacterText;
+        
+        [SerializeField] private Image selectedModeImage;
         [SerializeField] private TextMeshProUGUI selectedModeText;
         
         [SerializeField] private Toggle botModeToggle;
@@ -30,8 +33,8 @@ namespace Scene {
             botModeToggle.onValueChanged.AddListener(OnValueChangedBotMode);
             botModeToggle.isOn = GameManager.Instance.IsBotModeActivated;
 
-            selectedModeText.text = ModeManager.Instance.CurGameMode.ToString();
             selectedCharacterText.text = CharacterManager.Instance.MyCharacterType.ToString();
+            SetCurModeInfo();
         }
 
         private void OnClickPlayButton() {
@@ -54,7 +57,7 @@ namespace Scene {
 
         private async UniTask OnClickSelectModeAsync() {
             await PopupManager.Instance.ShowAsync(nameof(ModePopup));
-            selectedModeText.text = ModeManager.Instance.CurGameMode.ToString();
+            SetCurModeInfo();
         }
 
         private async UniTask OnClickSelectCharacterAsync() {
@@ -73,6 +76,19 @@ namespace Scene {
 #endif
             }
             isClickedLeave = false;
+        }
+
+        private void SetCurModeInfo() {
+            var modeInfo = ModeManager.Instance.GetModeInfo();
+            if (modeInfo == null) return;
+
+            foreach (var item in modeInfo.items) {
+                if (item.gameMode == ModeManager.Instance.CurGameMode) {
+                    selectedModeText.text = item.title;
+                    selectedModeImage.sprite = SpriteCacheHelper.Get(item.iconSpriteName);
+                    return;
+                }
+            }
         }
     }
 }
