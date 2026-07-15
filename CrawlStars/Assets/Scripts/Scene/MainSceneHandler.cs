@@ -16,8 +16,7 @@ namespace Scene {
         [SerializeField] private Button selectCharacterButton;
         [SerializeField] private Button selectModeButton;
 
-        [SerializeField] private TextMeshProUGUI selectedCharacterText;
-        
+        [SerializeField] private Image selectedCharacterImage;
         [SerializeField] private Image selectedModeImage;
         [SerializeField] private TextMeshProUGUI selectedModeText;
         
@@ -33,8 +32,8 @@ namespace Scene {
             botModeToggle.onValueChanged.AddListener(OnValueChangedBotMode);
             botModeToggle.isOn = GameManager.Instance.IsBotModeActivated;
 
-            selectedCharacterText.text = CharacterManager.Instance.MyCharacterType.ToString();
             SetCurModeInfo();
+            SetCurCharacterInfo();
         }
 
         private void OnClickPlayButton() {
@@ -62,7 +61,7 @@ namespace Scene {
 
         private async UniTask OnClickSelectCharacterAsync() {
             await PopupManager.Instance.ShowAsync(nameof(CharacterPopup));
-            selectedCharacterText.text = CharacterManager.Instance.MyCharacterType.ToString();
+            SetCurCharacterInfo();
         }
 
         protected override async UniTask ClickLeaveInternal() {
@@ -89,6 +88,11 @@ namespace Scene {
                     return;
                 }
             }
+        }
+
+        private void SetCurCharacterInfo() {
+            var characterInfo = CharacterManager.Instance.GetCharacterInfo(CharacterManager.Instance.MyCharacterType);
+            selectedCharacterImage.sprite = SpriteCacheHelper.Get(characterInfo.iconSpriteName);
         }
     }
 }

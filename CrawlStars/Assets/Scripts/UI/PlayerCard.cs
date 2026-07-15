@@ -11,19 +11,24 @@ public class PlayerCard : MonoBehaviour {
     [SerializeField] private Image characterImage;
     [SerializeField] private TextMeshProUGUI nameText;
     
-    private static readonly Color32 MySideBgColor = new Color32(54, 175, 255, 255);
-    private static readonly Color32 OtherSideBgColor = new Color32(207, 35, 45, 255);
+    private const string MyTeamBgName = "playercard_myteam";
+    private const string OpponentBgName = "playercard_opponent";
 
     public void SetData(CharacterManager.CharacterType type, string name, bool isMySide) {
         var info = CharacterManager.Instance.GetCharacterInfo(type);
         if (info != null) {
             characterImage.sprite = SpriteCacheHelper.Get(info.iconSpriteName);
+            if (characterImage.sprite != null) {
+                characterImage.SetNativeSize();
+            }
         }
         nameText.text = name;
-        bg.color = isMySide ? MySideBgColor : OtherSideBgColor;
+
+        bg.sprite = SpriteCacheHelper.Get(isMySide ? MyTeamBgName : OpponentBgName);
     }
 
-    public void Release() {
+    public void Dispose() {
         characterImage.sprite = null;
+        bg.sprite = null;
     }
 }

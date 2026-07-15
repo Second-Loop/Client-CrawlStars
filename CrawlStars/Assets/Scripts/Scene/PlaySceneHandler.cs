@@ -24,6 +24,7 @@ namespace Scene {
             cooldownView.Initialize(GameManager.Instance.AttackCooldownSource);
 
             waitingCurtain.SetActive(true);
+            cooldownView.gameObject.SetActive(false);
         }
 
         private void OnDestroy() {
@@ -54,6 +55,7 @@ namespace Scene {
             if (snapshot.Status != "starting") return;
 
             waitingCurtain.SetActive(false);
+            cooldownView.gameObject.SetActive(true);
             NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
         }
     }

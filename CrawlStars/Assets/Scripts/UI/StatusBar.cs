@@ -2,6 +2,7 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Utility;
 
 public class StatusBar : MonoBehaviour {
     [SerializeField] private Image barBg;
@@ -13,9 +14,9 @@ public class StatusBar : MonoBehaviour {
 
     private int maxValue;
     
-    private static readonly Color32 MyColor = new Color32(14, 164, 0, 255);
-    private static readonly Color32 MySideColor = new Color32(0, 205, 219, 255);
-    private static readonly Color32 OtherSideColor = new Color32(210, 59, 69, 255);
+    private const string MyBg = "progress_green";
+    private const string MySideBg = "progress_blue";
+    private const string OtherSideBg = "progress_red";
 
     // 임시
     public float Value => barImage.fillAmount;
@@ -27,6 +28,10 @@ public class StatusBar : MonoBehaviour {
         if (progressText) progressText.text = maxValue.ToString();
         if (dividerRoot) dividerRoot.SetActive(false);
         gameObject.SetActive(true);
+    }
+
+    public void Dispose() {
+        barImage.sprite = null;
     }
 
     public void SetDivider(int count) {
@@ -52,7 +57,8 @@ public class StatusBar : MonoBehaviour {
     }
 
     public void SetColor(bool isMe, bool isMySide) {
-        barImage.color = isMe ? MyColor : (isMySide ? MySideColor : OtherSideColor);
+        var spriteName = isMe ? MyBg : (isMySide ? MySideBg : OtherSideBg);
+        barImage.sprite = SpriteCacheHelper.Get(spriteName);
     }
 
     public void MoveValue(int to) {

@@ -21,10 +21,10 @@ namespace Popup {
 
         [SerializeField] private GameObject countdownGroup;
         [SerializeField] private TextMeshProUGUI countdownText;
-        [SerializeField] private TextMeshProUGUI startText;
 
         [SerializeField] private List<PlayerCard> playerCards;
         [SerializeField] private GameObject vsText;
+        [SerializeField] private GameObject startText;
 
         public override bool CanCloseWithEsc => false;
         
@@ -50,6 +50,13 @@ namespace Popup {
             StartCountdownAsync(countdownSeconds - 1).Forget();
         }
 
+        public override void Dispose(Result result = null) {
+            base.Dispose(result);
+            foreach (var playerCard in playerCards) {
+                playerCard.Dispose();
+            }
+        }
+
         private void SetPlayerCards(IReadOnlyList<ReadyPlayerDto> players) {
             if (players == null) {
                 TurnOffPlayerCards();
@@ -68,7 +75,7 @@ namespace Popup {
                 foreach (var player in players) {
                     bool isMySide = player.Team == PlayerManager.Instance.MyTeam;
                     int idx = isMySide ? mySideIdx++ : otherSideIdx++;
-                    playerCards[idx].SetData(CharacterManager.CharacterType.A, "Player", isMySide);
+                    playerCards[idx].SetData(CharacterManager.CharacterType.Shelly, "Player", isMySide);
                     playerCards[idx].gameObject.SetActive(true);
                 }
 
