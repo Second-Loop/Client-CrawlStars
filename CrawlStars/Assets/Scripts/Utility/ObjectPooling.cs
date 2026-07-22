@@ -23,6 +23,8 @@ namespace Utility {
                 go.transform.SetParent(parent);
             }
 
+            if (go == null) return null;
+
             go.gameObject.SetActive(true);
             return go;
         }
@@ -40,9 +42,19 @@ namespace Utility {
         }
 
         public bool TryAbandon(string objName, GameObject go) {
+            if (go == null) {
+                Debug.LogError($"ObjectPooling.TryAbandon::{objName} object is null.");
+                return false;
+            }
+
             if (!objectPool.TryGetValue(objName, out var pool)) {
                 Debug.LogError($"ObjectPooling.TryAbandon::{objName}이 Pool에 등록되어있지 않습니다. 오브젝트를 Destroy 합니다.");
                 Destroy(go);
+                return false;
+            }
+
+            if (!go.activeSelf) {
+                Debug.LogError($"ObjectPooling.TryAbandon::{objName} object is already abandoned.");
                 return false;
             }
 
@@ -78,13 +90,14 @@ namespace Utility {
         }
 
         public void WarmUp(string objName, int amount) {
-            if (amount == 0) {
+            if (amount <= 0) {
                 Debug.LogError($"ObjectPooling.WarmUp::amount가 0 이하입니다. {amount}");
                 return;
             }
 
             var obj = LoadPrefab(objName);
             if (obj == null) return;
+            obj.SetActive(false);
 
             if (!objectPool.TryGetValue(objName, out var pool)) {
                 pool = new Queue<GameObject>();
@@ -94,7 +107,11 @@ namespace Utility {
             pool.Enqueue(obj);
 
             for (int i = 0; i < amount - 1; ++i) {
-                pool.Enqueue(LoadPrefab(objName));
+                var additionalObj = LoadPrefab(objName);
+                if (additionalObj == null) continue;
+
+                additionalObj.SetActive(false);
+                pool.Enqueue(additionalObj);
             }
         }
 

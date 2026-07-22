@@ -6,13 +6,21 @@ using UnityEngine;
 
 namespace Network {
     public class MatchDto {
+        [JsonProperty("gameMode")] public string GameMode { get; set; }
         [JsonProperty("room")] public RoomDto Room { get; set; }
         [JsonProperty("player")] public PlayerDto Player { get; set; }
+        [JsonProperty("sessionToken")] public string SessionToken { get; set; }
         [JsonProperty("webSocketPath")] public string WebSocketPath { get; set; }
+    }
+
+    public class MatchmakingJoinRequestDto {
+        [JsonProperty("gameMode")] public string GameMode { get; set; }
     }
 
     public class RoomDto {
         [JsonProperty("id")] public string Id { get; set; }
+        [JsonProperty("gameMode")] public string GameMode { get; set; }
+        [JsonProperty("status")] public string Status { get; set; }
         [JsonProperty("players")] public PlayerDto[] Players { get; set; }
         [JsonProperty("maxPlayers")] public int MaxPlayers { get; set; }
     }
@@ -46,6 +54,7 @@ namespace Network {
         [JsonProperty("Id")] public string Id { get; set; }
         [JsonProperty("Team")] public string Team { get; set; }
         [JsonProperty("Slot")] public int Slot { get; set; }
+        [JsonProperty("IsBot")] public bool IsBot { get; set; }
         [JsonProperty("SpawnPosition")] public Vector2Dto SpawnPosition { get; set; }
         [JsonProperty("CharacterType")] public int CharacterType { get; set; }
     }
@@ -86,10 +95,12 @@ namespace Network {
     public class PlayerDto {
         [JsonProperty("id")] public string Id { get; set; }
         [JsonProperty("team")] public string Team { get; set; }
+        [JsonProperty("isBot")] public bool IsBot { get; set; }
         [JsonProperty("slot")] public int Slot { get; set; } // 순서
     }
 
     public class InputMessageDto {
+        [JsonProperty("ClientTick")] public long ClientTick { get; set; }
         [JsonProperty("MoveDir")] public Vector2Dto MoveDir { get; set; }
         [JsonProperty("AttackDir")] public Vector2Dto AttackDir { get; set; }
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }

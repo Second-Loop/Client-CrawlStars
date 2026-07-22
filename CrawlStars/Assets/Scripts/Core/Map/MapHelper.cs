@@ -4,7 +4,7 @@ namespace Core.Map {
     public static class MapHelper {
         public static MapData CachedMapData { get; set; }
 
-        private static readonly float HalfTileSize = GameConfig.TileSize * 0.5f;
+        private static float HalfTileSize => GameConfig.TileSize * 0.5f;
 
         public static Vector2 GetMapStartPos(MapData mapData) => new Vector2(
             -HalfTileSize * (mapData.width - 1),
@@ -26,10 +26,10 @@ namespace Core.Map {
 
         public static bool IsInBush(int x, int y) {
             var mapData = CachedMapData;
-            if (mapData == null) return true;
+            if (mapData == null) return false;
 
-            if (x < 0 || x >= mapData.width) return true;
-            if (y < 0 || y >= mapData.height) return true;
+            if (x < 0 || x >= mapData.width) return false;
+            if (y < 0 || y >= mapData.height) return false;
 
             return mapData.map[y][x] == (int)Tile.TileType.Bush;
         }

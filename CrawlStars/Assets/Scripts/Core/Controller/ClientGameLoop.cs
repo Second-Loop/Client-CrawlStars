@@ -114,11 +114,7 @@ namespace Core.Controller {
             accumulator = shouldSendImmediately ? 0f : accumulator % InputInterval;
 
             // 추후 usedSkill 보내기 
-            await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
-                MoveDir = new Vector2Dto(moveDirection),
-                AttackDir = new Vector2Dto(attackDirection),
-                PressedAttack = attackDirection != Vector2.zero
-            });
+            await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection);
         }
 
         private void HandleSnapshot(SnapshotDto snapshot) {
@@ -140,7 +136,9 @@ namespace Core.Controller {
             }
 
             if (snapshot.Players == null) {
-                Debug.LogWarning("ClientGameLoop.HandleSnapshot::snapshot players are null");
+                if (snapshot.Tick != 0) {
+                    Debug.LogWarning("ClientGameLoop.HandleSnapshot::gameplay snapshot players are null");
+                }
                 return;
             }
 

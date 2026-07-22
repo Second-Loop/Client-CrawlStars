@@ -54,11 +54,7 @@ namespace Core.Simulator {
             onSendInput?.Invoke(moveDirection, attackDirection);
 
             // 추후 usedSkill 보내기
-            await NetworkManager.Instance.SendSocketJsonAsync(new InputMessageDto {
-                MoveDir = new Vector2Dto(moveDirection),
-                AttackDir = new Vector2Dto(attackDirection),
-                PressedAttack = attackDirection != Vector2.zero
-            });
+            await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection);
         }
 
         private (Vector2 moveDirection, Vector2 attackDirection) Update(AttackManager attackManager) {

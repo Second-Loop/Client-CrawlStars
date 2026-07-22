@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Threading;
+using Core;
 using Core.Player;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
@@ -14,6 +15,7 @@ namespace Network {
         private string jwtAccessToken;
         private UniTask initializationTask;
         private ReadyEventMessageDto matchedReadyEvent;
+        private long nextClientTick = 1;
 
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
@@ -94,6 +96,19 @@ namespace Network {
 
         public UniTask SendReadyAckAsync() => SendSocketJsonAsync(new ReadyAckMessageDto());
 
+        public UniTask SendInputAsync(Vector2 moveDirection, Vector2 attackDirection) {
+            if (nextClientTick == long.MaxValue) {
+                throw new InvalidOperationException("Client input tick reached its maximum value.");
+            }
+
+            return SendSocketJsonAsync(new InputMessageDto {
+                ClientTick = nextClientTick++,
+                MoveDir = new Vector2Dto(moveDirection),
+                AttackDir = new Vector2Dto(attackDirection),
+                PressedAttack = attackDirection != Vector2.zero
+            });
+        }
+
         public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
             await initializationTask;
             ct.ThrowIfCancellationRequested();
@@ -103,16 +118,24 @@ namespace Network {
 
             IsMatched = false;
             matchedReadyEvent = null;
-            MatchDto dto = await RestClient.PostAsync<object, MatchDto>("matchmaking/join", null);
-            if (dto == null) {
-                Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is null");
-                throw new WebException("matchmaking response is null");
+            string requestedGameMode = GetSelectedGameMode();
+            var request = new MatchmakingJoinRequestDto { GameMode = requestedGameMode };
+            MatchDto dto = await RestClient.PostAsync<MatchmakingJoinRequestDto, MatchDto>("matchmaking/join", request);
+            if (dto?.Room == null || dto.Player == null || string.IsNullOrEmpty(dto.WebSocketPath) ||
+                string.IsNullOrEmpty(dto.SessionToken)) {
+                Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is incomplete");
+                throw new WebException("matchmaking response is incomplete");
+            }
+            if (!string.Equals(dto.GameMode, requestedGameMode, StringComparison.Ordinal) ||
+                !string.Equals(dto.Room.GameMode, requestedGameMode, StringComparison.Ordinal)) {
+                throw new WebException("matchmaking response game mode does not match the request");
             }
 
-            Debug.Log($"Room Id: {dto.Room.Id}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
+            Debug.Log($"Room Id: {dto.Room.Id}, GameMode: {dto.GameMode}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
                       $"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
             PlayerManager.Instance.MyId = dto.Player.Id;
             PlayerManager.Instance.MyTeam = dto.Player.Team;
+            nextClientTick = 1;
             ct.ThrowIfCancellationRequested();
 
             // 방 입장
@@ -157,6 +180,7 @@ namespace Network {
                             Debug.LogWarning($"NetworkManager.HandleSocketMessage::message snapshot is null");
                             return;
                         }
+                        ObserveProcessedClientTick(socketMessage.Snapshot);
                         SnapshotReceived?.Invoke(socketMessage.Snapshot);
                         break;
                     case "GameEnd":
@@ -177,6 +201,26 @@ namespace Network {
                 }
             } catch (JsonException e) {
                 Debug.LogError($"NetworkManager.HandleSocketMessage::invalid message/{e.Message}");
+            }
+        }
+
+        private static string GetSelectedGameMode() => ModeManager.Instance.CurGameMode switch {
+            ModeManager.GameMode.Solo => "solo",
+            ModeManager.GameMode.Team => "team",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        private void ObserveProcessedClientTick(SnapshotDto snapshot) {
+            if (snapshot.Players == null) return;
+
+            foreach (PlayerData player in snapshot.Players) {
+                if (player == null || player.Id != PlayerManager.Instance.MyId) continue;
+                if (player.LastProcessedClientTick == long.MaxValue) {
+                    nextClientTick = long.MaxValue;
+                } else if (player.LastProcessedClientTick >= nextClientTick) {
+                    nextClientTick = player.LastProcessedClientTick + 1;
+                }
+                return;
             }
         }
     }

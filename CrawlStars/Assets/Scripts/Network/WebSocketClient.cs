@@ -143,7 +143,7 @@ namespace Network {
                     UnregisterEvents(socket);
                     socket = null;
                 }
-                ErrorReceived?.Invoke(e.Message);
+                ErrorReceived?.Invoke($"WebSocket connection failed ({e.GetType().Name}).");
             }
         }
         
@@ -173,7 +173,7 @@ namespace Network {
         }
 
         private void HandleError(string error) {
-            ErrorReceived?.Invoke(error);
+            ErrorReceived?.Invoke("WebSocket transport error.");
         }
 
         private void HandleClose(WebSocketCloseCode closeCode) {
