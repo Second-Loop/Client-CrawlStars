@@ -48,15 +48,19 @@
 
 <br/>
 
-## 특히 신경 쓴 점
+## 설계와 문제 해결
 
 ### 1. 로컬 프로토타입에서 서버 권위형 구조로 전환
 
-초기 30Hz 로컬 시뮬레이터로 이동, 원·사각형 충돌, 투사체, 피격, 승패 검증. 서버 연동 단계에서 로컬 판정을 제거하고 `ClientGameLoop`는 입력 전송, `PlayerManager`와 `ProjectileManager`는 서버 스냅샷 표현에 집중.
+서버 개발과 병행하기 전 30Hz 로컬 시뮬레이터로 핵심 전투 규칙 검증. JSON 맵을 읽어 타일 프리팹을 배치하고 플레이어·투사체·타일에 풀링 적용. Sprite 동적 로드 결과도 캐싱해 반복 생성 비용 억제.
 
-프로토타입 보존보다 검증된 학습과 명확한 책임 경계를 우선. [PR #2](https://github.com/Second-Loop/Client-CrawlStars/pull/2)에서 [PR #6](https://github.com/Second-Loop/Client-CrawlStars/pull/6)의 로컬 검증 후 [PR #12](https://github.com/Second-Loop/Client-CrawlStars/pull/12)에서 서버 권위형 구조로 전환.
+플레이어는 원, 벽은 사각형으로 단순화하고 Closest Point 기반 원·사각형 충돌과 원·원 충돌 구현. `Update`에서 공격 입력을 저장한 뒤 tick에서 소비해 짧은 클릭 누락 방지. 회전은 `Atan2`로 모든 사분면 처리.
 
-### 2. 체감 지연을 줄이는 입력 파이프라인
+서버 연동 후 로컬 판정 제거. `클라이언트 입력 → 서버 tick 시뮬레이션 → snapshot 수신 → 화면 표현`으로 책임 재분리. `ClientGameLoop`는 입력 전송, `PlayerManager`와 `ProjectileManager`는 서버 상태 표현에 집중. [PR #2](https://github.com/Second-Loop/Client-CrawlStars/pull/2)에서 [PR #6](https://github.com/Second-Loop/Client-CrawlStars/pull/6)의 검증 후 [PR #12](https://github.com/Second-Loop/Client-CrawlStars/pull/12)에서 전환.
+
+### 2. 체감 지연을 원인별로 분해
+
+초기 개발 환경에서 입력 응답 지연 300에서 1,000ms 측정. Cloudflare Proxy 경유 구간을 확인하고 DNS Only로 전환해 평균 약 50ms까지 단축. 지연 개선과 함께 프록시 보호 상실, 서버 IP 노출, 방화벽·인증 강화 필요성도 절충 비용으로 기록.
 
 기본 입력 전송률은 서버 tick과 같은 30Hz. 방향 전환 또는 공격 감지 시 다음 주기까지 기다리지 않고 즉시 전송.
 
@@ -66,13 +70,13 @@
 - `ClientTick`: 1부터 증가하는 입력 시퀀스 전송
 - `LastProcessedClientTick`: 서버가 처리한 마지막 입력과 다음 입력 번호 동기화
 
-클라이언트 예측보다 입력 대기와 프레임 순서에서 발생하는 불필요한 지연을 먼저 제거. 근거는 [PR #24](https://github.com/Second-Loop/Client-CrawlStars/pull/24)와 [서버 동기화 커밋](https://github.com/Second-Loop/Client-CrawlStars/commit/7a208eb5c9f5e06511cf725967e9af39c1cb83ae)에 기록.
+클라이언트 예측 도입 전 네트워크 경로, 입력 대기, 프레임 실행 순서에서 발생하는 지연부터 제거. [PR #24](https://github.com/Second-Loop/Client-CrawlStars/pull/24)와 [서버 동기화 커밋](https://github.com/Second-Loop/Client-CrawlStars/commit/7a208eb5c9f5e06511cf725967e9af39c1cb83ae)에 기록.
 
 ### 3. 측정 가능한 성능 개선
 
-`BenchMarker`로 입력 감지, 응답 시간, 3초 기준 timeout 손실 비율 시각화. 실제 패킷 손실률이 아닌 입력 후 대응 스냅샷까지의 애플리케이션 체감 지표로 활용.
+`BenchMarker`로 입력 감지, 응답 시간, 3초 기준 timeout 비율 시각화. 실제 패킷 손실률이 아닌 입력 후 대응 snapshot까지의 애플리케이션 체감 지표로 활용.
 
-- 메시지 종류 확인과 실제 DTO 역직렬화를 통합해 메시지당 2회에서 1회로 축소
+- 메시지 종류 확인과 DTO 역직렬화를 통합해 메시지당 2회에서 1회로 축소
 - 모든 수신 타입을 `SocketMessageDto` 하나로 분기
 - `Vector2Dto`를 class에서 struct로 변경해 반복 할당 감소
 - 맵 타일, 플레이어, 투사체, 선택 UI에 오브젝트 풀 적용
@@ -80,11 +84,13 @@
 
 측정 도구는 [PR #13](https://github.com/Second-Loop/Client-CrawlStars/pull/13), GC Alloc 개선은 [PR #24](https://github.com/Second-Loop/Client-CrawlStars/pull/24)에 기록.
 
-### 4. 비동기 생명주기와 취소 처리
+### 4. 반복 가능한 게임 루프와 비동기 생명주기
 
-매칭, WebSocket, 팝업, 씬 로드를 UniTask 기반으로 연결. `MatchingPopup`이 `CancellationTokenSource`를 소유하고 취소 시 매칭 대기 종료와 소켓 정리. 연결별 소켓 인스턴스 분리, 닫기 handshake 3초 timeout, 애플리케이션 종료 시 즉시 abort.
+`Main → Play → 전투 → 승패 → Main`을 에디터 재시작 없이 반복하는 흐름부터 구성. 공용 매니저는 Splash 씬에서 생성하고 `DontDestroyOnLoad`로 유지. 다음 씬을 Additive 비동기 로드한 뒤 활성화하고 이전 씬을 언로드해 전환 순간의 집중 부하 완화.
 
-씬 전환 순서는 `다음 씬 로드 → 초기 데이터 적용 → 활성화 → 이전 씬 언로드`. 팝업 결과는 `UniTaskCompletionSource`로 반환하고 열린 순서와 Canvas sorting order를 중앙 관리.
+매칭, WebSocket, 팝업, 씬 로드를 UniTask 기반으로 연결. `MatchingPopup`이 취소 토큰을 소유하고 취소 시 매칭 대기와 소켓 정리. 연결별 소켓 인스턴스 분리, 닫기 handshake 3초 timeout, 애플리케이션 종료 시 즉시 abort.
+
+팝업은 추상화된 Param·Result와 `UniTaskCompletionSource`로 결과 반환. `await PopupManager.ShowAsync` 형태로 호출부의 흐름 유지. 열린 순서와 Canvas sorting order는 중앙 관리.
 
 ### 5. 맵 규칙과 봇 판단
 
@@ -100,33 +106,29 @@
 
 관련 구현은 [PR #16](https://github.com/Second-Loop/Client-CrawlStars/pull/16), [PR #22](https://github.com/Second-Loop/Client-CrawlStars/pull/22), [PR #23](https://github.com/Second-Loop/Client-CrawlStars/pull/23)에 기록.
 
-### 6. 코드 밖의 계약 관리
+### 6. 라이브러리를 블랙박스로 두지 않는 네트워크 설계
+
+모바일과 WebGL 대응을 위해 NativeWebSocket 채택. REST와 WebSocket 라이브러리 내부 구현도 함께 추적해 버퍼링, HTTP 파싱, 상태 코드 처리, DNS, SSL/TLS의 책임 경계 확인. 현재 REST 런타임은 플랫폼 경로 호환성을 위해 `UnityWebRequest` 사용.
+
+매칭 흐름은 `REST 참가 → WebSocket 연결 → Ready 수신 → Play 로드 → ready ACK → Starting → 5초 countdown → Started snapshot`으로 명시. 연결 성공만으로 게임 준비를 판단하지 않고 서버와 클라이언트의 준비 상태를 단계별 동기화.
+
+### 7. 코드 밖의 계약 관리
 
 REST와 WebSocket 메시지는 [OpenAPI](CrawlStars/Docs/References/API/openapi.yaml), [AsyncAPI](CrawlStars/Docs/References/API/asyncapi.yaml)로 추적. 서버 공용 수치는 `game-config.json`으로 분리하고 Unity 빌드 전처리에서 최신 서버 설정 다운로드와 JSON 검증 수행.
 
 런타임 서버 주소는 Git에서 제외된 `network_config.json`으로 분리. URL 기반 `StreamingAssets` 환경을 위해 `UnityWebRequest` 사용. 게임 설정 로드 후 캐릭터·모드 Addressables 병렬 초기화와 횟수 제한 재시도 적용.
 
-## 포트폴리오로서 보여주는 역량
+### 8. 리뷰에서 발견한 경계 조건 반영
 
-| 역량 | 프로젝트 근거 |
-| --- | --- |
-| 게임플레이 구조화 | 입력, 조준, 공격, 쿨다운, 플레이어, 투사체의 역할별 분리 |
-| 실시간 네트워크 | REST 매치메이킹, WebSocket lifecycle, Ready ACK, 30Hz snapshot, ClientTick |
-| 알고리즘 활용 | A* 길찾기, BFS 부시 영역, 벡터 투영 기반 투사체 회피 |
-| Unity 런타임 이해 | Script Execution Order, Additive Scene, Addressables, StreamingAssets, Object Pooling |
-| 성능 개선 | 인게임 응답 지표, 단일 역직렬화, struct DTO, 캐시와 풀링 |
-| 비동기 UX | 취소 가능한 매칭, await 가능한 팝업, 입력 잠금과 자원 정리 |
-| 협업과 문서화 | 25개 병합 PR, PR별 설명과 영상, API 계약과 Excalidraw 흐름도 |
+PR 리뷰를 기능 확인보다 상태 전이 검증에 활용. 동시 사망 시 Draw, 매칭 취소 후 입력 재활성화, 플랫폼별 StreamingAssets 경로, 초기화 경쟁, 일반 공격과 스킬의 쿨다운 분리 등 정상 흐름 밖의 조건을 후속 구현에 반영.
 
-## 개발 철학
+동작을 먼저 증명한 뒤 책임을 분리하고, 감각보다 측정값으로 병목을 좁히며, 코드와 명세의 불일치는 추측하지 않고 통합 과제로 기록하는 방식 유지.
 
-| 원칙 | 적용 |
-| --- | --- |
-| 동작을 먼저 증명하고 책임 재분리 | 로컬 시뮬레이터로 전투 규칙 검증 후 서버 권위형 구조로 전환 |
-| 감각보다 측정값 우선 | 인게임 응답 지표와 Profiler 확인 후 역직렬화·DTO 최적화 |
-| 비동기 작업의 명확한 소유권 | 팝업은 매칭 취소, 네트워크 계층은 소켓, 씬 컨트롤러는 전환 자원 관리 |
-| 리뷰를 통한 엣지 케이스 탐색 | 동시 사망, 입력 재활성화, 플랫폼 경로, 초기화 경쟁, 쿨다운 문제 반영 |
-| 불일치 계약의 투명한 기록 | 코드와 API 명세 차이를 추측으로 고정하지 않고 통합 과제로 관리 |
+## 구현 기록
+
+- [로컬 프로토타이핑 - 브롤스타즈 모작 #1](https://sikpang.tistory.com/56)
+- [게임 기본 루프 개발 - 브롤스타즈 모작 #2](https://sikpang.tistory.com/57)
+- [서버 연동 - 브롤스타즈 모작 #3](https://sikpang.tistory.com/64)
 
 ## PR로 보는 개발 과정
 
