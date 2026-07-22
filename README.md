@@ -4,9 +4,13 @@
 > 입력, 매치메이킹, 30Hz 스냅샷 동기화, 전투 표현, 봇 AI, UI, 성능 개선까지 클라이언트 전반 설계 및 구현
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e851789d-527f-4569-875e-4519f9df341e" width="49%" alt="Crawl Stars 인게임 전투 화면" />
-  <img src="https://github.com/user-attachments/assets/d3484aaa-c39f-447c-a8bb-654a0762e0b6" width="49%" alt="Crawl Stars 메인 화면" />
+  <img src="https://github.com/user-attachments/assets/e851789d-527f-4569-875e-4519f9df341e" width="49%" />
+  <img src="https://github.com/user-attachments/assets/a37e3fb2-a16f-4ec6-8250-553b22913fd4" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/2493088a-bc0f-44c7-850b-4b7821152df0" width="49%" />
+  <img src="https://github.com/user-attachments/assets/824e09f5-37dc-42f2-ba33-1b21bc5f3575" width="49%"  />
 </p>
+
+<br/>
 
 ## 한눈에 보기
 
@@ -14,13 +18,13 @@
 | --- |-----------------------------------------------------------------------------------|
 | 개발 기간 | 2026년 5월 13일 ~ 7월 22일                                                             |
 | 담당 | Unity 클라이언트 구조, 게임플레이, 네트워크, UI, 봇, 최적화, 서버 연동                                    |
-| 개발 기여 | 클라이언트 저장소 PR 26개 작성, 기능·디자인 PR 25개 병합                                             |
-| 코드 규모 | 커스텀 C# 65개, 약 4,000줄, 씬 3개, 프리팹 19개                                               |
 | 엔진 | Unity `6000.3.15f1`, URP 2D                                                       |
 | 주요 기술 | C#, UniTask, REST, WebSocket, Addressables, Newtonsoft.Json, DOTween              |
 | 서버 | [Second-Loop/Server-CrawlStars](https://github.com/Second-Loop/Server-CrawlStars) |
 
 브롤스타즈의 짧고 즉각적인 전투 경험을 네트워크 게임 클라이언트 관점에서 재구성. 서버 상태의 안정적인 표현, 입력 지연과 런타임 할당 감소, 비동기 매칭과 씬 전환의 일관된 흐름에 집중.
+
+<br/>
 
 ## 핵심 플레이 흐름
 
@@ -32,33 +36,17 @@
 6. 서버 카운트다운 후 입력 전송과 30Hz 스냅샷 반영
 7. `GameEnd` 결과에 따른 종료 팝업과 메인 씬 복귀
 
+<br/>
+
 ## 클라이언트 아키텍처
 
-```mermaid
-flowchart LR
-    Input["InputProvider\n이동·조준·공격"] --> Loop["ClientGameLoop\n입력 전송·스냅샷 적용"]
-    Cooldown["AttackManager\n공격 충전·스킬 쿨다운"] --> Loop
-    Bot["BotController\nA*·회피·추격·탐색"] --> Loop
+<img width="915" height="755" alt="core" src="https://github.com/user-attachments/assets/72a8df17-9076-477e-8679-6197f2f138e7" />
 
-    Loop --> Network["NetworkManager\n매칭·메시지 분기·ClientTick"]
-    Network --> REST["RestApiClient"]
-    Network --> WS["WebSocketClient"]
-    REST <--> Server["Server-CrawlStars"]
-    WS <--> Server
-
-    Network --> Loop
-    Loop --> Players["PlayerManager"]
-    Loop --> Projectiles["ProjectileManager"]
-    Loop --> Visibility["BushVisibilityController"]
-    Players --> Pool["Object Pool"]
-    Projectiles --> Pool
-    Visibility --> Players
-
-    Scene["SceneController\nSplash → Main → Play"] --> UI["Popup·Countdown·StatusBar"]
-    Loop --> UI
-```
+<img width="429" height="746" alt="matching" src="https://github.com/user-attachments/assets/7bef2594-1c22-45e6-9150-85f486bd7ce4" />
 
 네트워크 계층은 전송과 메시지 해석, 게임 루프는 서버 상태 전달, 플레이어·투사체 매니저는 DTO의 Unity 오브젝트 투영 담당. 씬과 팝업은 게임 상태와 분리된 비동기 흐름으로 관리.
+
+<br/>
 
 ## 특히 신경 쓴 점
 
@@ -201,15 +189,6 @@ CrawlStars/
    ├─ References/API        OpenAPI, AsyncAPI 계약
    └─ FlowCharts            Core, UI, Matching 흐름도
 ```
-
-## 실행 방법
-
-1. Unity Hub에서 `CrawlStars` 폴더를 Unity `6000.3.15f1`로 열기
-2. `CrawlStars/Assets/StreamingAssets/network_config.example.json`을 같은 폴더의 `network_config.json`으로 복사
-3. `restBaseUrl`과 `websocketUrl`을 실행 중인 [서버](https://github.com/Second-Loop/Server-CrawlStars) 주소로 변경
-4. Build Settings의 첫 씬 `Assets/Scenes/Splash.unity`에서 실행
-
-`network_config.json`은 Git에서 제외. Player 빌드 전 서버 저장소의 최신 `game-config.json` 다운로드와 JSON 검증 수행. 빌드 시 네트워크 연결 필요.
 
 ## 현재 통합 과제
 
