@@ -6,6 +6,7 @@ namespace Core.Player {
         [JsonProperty("Id")] public string Id { get; set; }
         [JsonProperty("Team")] public string Team { get; set; }
         [JsonProperty("Slot")] public int Slot { get; set; }
+        [JsonProperty("IsBot")] public bool IsBot { get; set; }
         [JsonProperty("Pos")] public Vector2Dto Pos { get; set; }
         [JsonProperty("MoveDir")] public Vector2Dto MoveDir { get; set; }
         [JsonProperty("AttackDir")] public Vector2Dto AttackDir { get; set; }
@@ -14,6 +15,7 @@ namespace Core.Player {
         [JsonProperty("HP")] public float Hp { get; set; }
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
         [JsonProperty("IsDead")] public bool IsDead { get; set; }
+        [JsonProperty("LastProcessedClientTick")] public long LastProcessedClientTick { get; set; }
         [JsonProperty("CharacterType")] public int CharacterType { get; set; }
     }
 }

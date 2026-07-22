@@ -75,7 +75,8 @@ namespace Popup {
                 foreach (var player in players) {
                     bool isMySide = player.Team == PlayerManager.Instance.MyTeam;
                     int idx = isMySide ? mySideIdx++ : otherSideIdx++;
-                    playerCards[idx].SetData(CharacterManager.CharacterType.Shelly, "Player", isMySide);
+                    string playerName = player.IsBot ? "Bot" : "Player";
+                    playerCards[idx].SetData(CharacterManager.CharacterType.Shelly, playerName, isMySide);
                     playerCards[idx].gameObject.SetActive(true);
                 }
 

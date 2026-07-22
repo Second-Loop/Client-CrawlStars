@@ -19,7 +19,11 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
-        MapHelper.CachedMapData = MapLoader.LoadMapFile(0);
+        if (readyEvent?.Map == null) {
+            throw new ArgumentException("Ready event map is missing.", nameof(readyEvent));
+        }
+
+        MapHelper.CachedMapData = readyEvent.Map;
         mapRenderer.Render(MapHelper.CachedMapData);
 
         clientGameLoop.Initialize(readyEvent.Players);
