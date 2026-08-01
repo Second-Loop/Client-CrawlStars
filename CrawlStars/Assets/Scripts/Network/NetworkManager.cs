@@ -30,10 +30,6 @@ namespace Network {
             initializationTask.Forget();
         }
 
-        private void Update() {
-            socketClient?.DispatchMessageQueue();
-        }
-
         private void OnApplicationQuit() {
             socketClient?.Abort();
             socketClient = null;
@@ -118,21 +114,15 @@ namespace Network {
 
             IsMatched = false;
             matchedReadyEvent = null;
-            string requestedGameMode = GetSelectedGameMode();
-            var request = new MatchmakingJoinRequestDto { GameMode = requestedGameMode };
+            var request = new MatchmakingJoinRequestDto {
+                GameMode = GetSelectedGameMode(),
+                CharacterType = (int)CharacterManager.Instance.MyCharacterType
+            };
             MatchDto dto = await RestClient.PostAsync<MatchmakingJoinRequestDto, MatchDto>("matchmaking/join", request);
-            if (dto?.Room == null || dto.Player == null || string.IsNullOrEmpty(dto.WebSocketPath) ||
-                string.IsNullOrEmpty(dto.SessionToken)) {
-                Debug.LogError("NetworkManager.MatchAsync::response of matchmaking is incomplete");
-                throw new WebException("matchmaking response is incomplete");
-            }
-            if (!string.Equals(dto.GameMode, requestedGameMode, StringComparison.Ordinal) ||
-                !string.Equals(dto.Room.GameMode, requestedGameMode, StringComparison.Ordinal)) {
-                throw new WebException("matchmaking response game mode does not match the request");
-            }
+            ValidateMatchmakingResponse(dto, request);
 
             Debug.Log($"Room Id: {dto.Room.Id}, GameMode: {dto.GameMode}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
-                      $"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}");
+                      $"My Id: {dto.Player.Id}, Slot: {dto.Player.Slot}, Team: {dto.Player.Team}, CharacterType: {dto.Player.CharacterType}");
             PlayerManager.Instance.MyId = dto.Player.Id;
             PlayerManager.Instance.MyTeam = dto.Player.Team;
             nextClientTick = 1;
@@ -209,6 +199,23 @@ namespace Network {
             ModeManager.GameMode.Team => "team",
             _ => throw new ArgumentOutOfRangeException()
         };
+
+        private static void ValidateMatchmakingResponse(MatchDto dto, MatchmakingJoinRequestDto request) {
+            if (dto?.Room == null || dto.Player == null || string.IsNullOrEmpty(dto.WebSocketPath) ||
+                string.IsNullOrEmpty(dto.SessionToken)) {
+                Debug.LogError("NetworkManager.ValidateMatchmakingResponse::response of matchmaking is incomplete");
+                throw new WebException("matchmaking response is incomplete");
+            }
+
+            if (!string.Equals(dto.GameMode, request.GameMode, StringComparison.Ordinal) ||
+                !string.Equals(dto.Room.GameMode, request.GameMode, StringComparison.Ordinal)) {
+                throw new WebException("matchmaking response game mode does not match the request");
+            }
+
+            if (dto.Player.CharacterType != request.CharacterType) {
+                throw new WebException("matchmaking response character type does not match the request");
+            }
+        }
 
         private void ObserveProcessedClientTick(SnapshotDto snapshot) {
             if (snapshot.Players == null) return;
