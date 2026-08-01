@@ -15,6 +15,7 @@ namespace Network {
 
     public class MatchmakingJoinRequestDto {
         [JsonProperty("gameMode")] public string GameMode { get; set; }
+        [JsonProperty("characterType")] public int CharacterType { get; set; }
     }
 
     public class RoomDto {
@@ -97,6 +98,7 @@ namespace Network {
         [JsonProperty("team")] public string Team { get; set; }
         [JsonProperty("isBot")] public bool IsBot { get; set; }
         [JsonProperty("slot")] public int Slot { get; set; } // 순서
+        [JsonProperty("characterType")] public int CharacterType { get; set; }
     }
 
     public class InputMessageDto {
