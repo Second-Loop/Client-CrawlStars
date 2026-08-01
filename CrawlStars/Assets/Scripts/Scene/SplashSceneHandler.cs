@@ -8,8 +8,7 @@ using Utility;
 namespace Scene {
     public class SplashSceneHandler : MonoBehaviour {
         private void Awake() {
-            // Screen.SetResolution(1920, 1080, true);
-            Screen.SetResolution(1280, 720, false);
+            Screen.SetResolution(1920, 1080, false);
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
             Application.runInBackground = true;
