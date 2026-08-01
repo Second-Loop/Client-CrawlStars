@@ -125,13 +125,6 @@ namespace Network {
             Debug.LogWarning($"WebSocket close completed with an error {context}: {exception.Message}");
         }
 
-        // NativeWebSocket 내부 큐에 저장된 메시지를 꺼내와 각 이벤트를 호출하는 과정
-        public void DispatchMessageQueue() {
-#if !UNITY_WEBGL || UNITY_EDITOR
-            socket?.DispatchMessageQueue();
-#endif
-        }
-
         private async UniTaskVoid ConnectInternal() {
             if (socket == null) return;
 

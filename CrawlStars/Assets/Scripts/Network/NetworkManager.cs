@@ -30,10 +30,6 @@ namespace Network {
             initializationTask.Forget();
         }
 
-        private void Update() {
-            socketClient?.DispatchMessageQueue();
-        }
-
         private void OnApplicationQuit() {
             socketClient?.Abort();
             socketClient = null;
