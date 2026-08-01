@@ -26,6 +26,13 @@
 
 <br/>
 
+## 빌드 (Alpha ver.)
+
+- [[MacOS](https://drive.google.com/file/d/1Qmr87XRnSf4s0dGux6ZoWyeBI2SpW2-o/view?usp=sharing)]
+- [[Windows](https://drive.google.com/file/d/1InnRw21KOOMTnRgewdge0TJIHBqx5EKN/view?usp=sharing)]
+
+<br/>
+
 ## 핵심 플레이 흐름
 
 ### 1. 인게임 코어 로직 flow
