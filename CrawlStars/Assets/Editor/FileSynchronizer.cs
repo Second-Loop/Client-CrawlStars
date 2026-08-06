@@ -20,7 +20,7 @@ public sealed class FileSynchronizer : IPreprocessBuildWithReport {
 
     public void OnPreprocessBuild(BuildReport report) {
         try {
-            SynchronizeFiles();
+            // SynchronizeFiles();
         } catch (Exception e) {
             throw new BuildFailedException($"Failed to synchronize files before build. {e.Message}");
         }
