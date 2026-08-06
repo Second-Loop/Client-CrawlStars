@@ -22,6 +22,7 @@ namespace Scene {
             NetworkManager.Instance.SnapshotReceived += HideWaitingCurtain;
 
             cooldownView.Initialize(GameManager.Instance.AttackCooldownSource);
+            aimRenderer.Initialize();
 
             waitingCurtain.SetActive(true);
             cooldownView.gameObject.SetActive(false);
