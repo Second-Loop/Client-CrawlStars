@@ -18,7 +18,6 @@ namespace Core.Controller {
         public IAttackCooldownSource AttackCooldownSource => attackManager;
 
         public Action<Vector2, bool> OnDetectInput;
-        public Action<Vector2, Vector2> OnSendInput;
 
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
 
@@ -44,7 +43,7 @@ namespace Core.Controller {
             accumulator += Time.deltaTime;
             if (GameManager.Instance.IsBotModeActivated) {
                 if (accumulator >= InputInterval) {
-                    BotController.Instance.SendInputAsync(attackManager, OnSendInput).Forget();
+                    BotController.Instance.SendInputAsync(attackManager).Forget();
                     accumulator %= InputInterval;
                 }
             } else {
@@ -108,8 +107,6 @@ namespace Core.Controller {
             previousMoveDirection = moveDirection;
             bool shouldSendImmediately = isMoveChanged || attackDirection != Vector2.zero;
             if (!shouldSendImmediately && accumulator < InputInterval) return;
-
-            OnSendInput?.Invoke(moveDirection, attackDirection);
 
             accumulator = shouldSendImmediately ? 0f : accumulator % InputInterval;
 
