@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using Core.Player;
 using DG.Tweening;
@@ -14,18 +13,31 @@ public class BenchMarker : MonoBehaviour {
     [SerializeField] private Image keyD;
     [SerializeField] private Image mouse;
     [SerializeField] private TextMeshProUGUI latencyText;
-    [SerializeField] private TextMeshProUGUI lossText;
+    [SerializeField] private TextMeshProUGUI timeoutRateText;
     [SerializeField] private Image effect;
-    
-    private readonly Queue<double> inputQue = new Queue<double>();
-    private int inputCount = 0;
-    private int lostCount = 0;
+
+    private readonly InputAckTracker inputAckTracker = new InputAckTracker();
     
     private const float ColorDuration = 0.3f;
-    private const float LossThreshold = 3000f;
 
-    public void OnPressKey(Vector2 moveDir, Vector2 attackDir) {
-        if (moveDir == Vector2.zero && attackDir == Vector2.zero) return;
+    private void Awake() {
+        latencyText.text = "-";
+        UpdateTimeoutRateText();
+    }
+
+    private void Update() {
+        var expiredCount = inputAckTracker.CheckExpiration(Time.realtimeSinceStartupAsDouble);
+        if (expiredCount <= 0) return;
+
+        PlayTimeoutEffect();
+        UpdateTimeoutRateText();
+    }
+
+    public void OnInputSubmitted(InputMessageDto input) {
+        if (input == null) return;
+
+        var moveDir = input.MoveDir.ToVector2();
+        var attackDir = input.AttackDir.ToVector2();
 
         if (moveDir.x < 0) TurnRedToWhite(keyA);
         else if (moveDir.x > 0) TurnRedToWhite(keyD);
@@ -35,15 +47,13 @@ public class BenchMarker : MonoBehaviour {
 
         if (attackDir != Vector2.zero) TurnRedToWhite(mouse);
 
-        inputQue.Enqueue(Time.realtimeSinceStartupAsDouble);
-        ++inputCount;
+        if (inputAckTracker.TryRecord(input.ClientTick, Time.realtimeSinceStartupAsDouble)) {
+            UpdateTimeoutRateText();
+        }
     }
 
     public void OnReceiveSnapshot(SnapshotDto snapshot) {
-        if (snapshot?.Players == null) {
-            Debug.LogWarning("BenchMark.OnReceiveSnapshot::snapshot players is null");
-            return;
-        }
+        if (snapshot?.Players == null) return;
 
         var me = snapshot.Players.FirstOrDefault(data => data.Id == PlayerManager.Instance.MyId);
         if (me == null) {
@@ -51,39 +61,27 @@ public class BenchMarker : MonoBehaviour {
             return;
         }
 
-        double elapsedMs = -1.0;
-        bool isLost = false;
-
-        while (inputQue.Count > 0) {
-            var inputTime = inputQue.Peek();
-            elapsedMs = (Time.realtimeSinceStartupAsDouble - inputTime) * 1000.0;
-            if (elapsedMs < LossThreshold) break;
-
-            inputQue.Dequeue();
-            ++lostCount;
-            isLost = true;
+        // 응답 처리 전에 타임아웃 요소들 먼저 처리, Update보다 먼저 호출될 수 있기 때문
+        var curTime = Time.realtimeSinceStartupAsDouble;
+        var expiredCount = inputAckTracker.CheckExpiration(curTime);
+        if (expiredCount > 0) {
+            PlayTimeoutEffect();
         }
 
-        if (isLost) {
-            effect.DOKill();
-            effect.color = Color.red;
-            effect.DOFade(0f, ColorDuration);
+        if (inputAckTracker.TryAcknowledge(me.LastProcessedClientTick, curTime, out var latencyMs)) {
+            latencyText.text = $"{latencyMs:F2} ms";
         }
-
-        UpdateLossText();
-
-        if (inputQue.Count == 0 || elapsedMs < 0 || 
-            me.MoveDir.ToVector2() == Vector2.zero && me.AttackDir.ToVector2() == Vector2.zero) return;
-
-        inputQue.Dequeue();
-
-        latencyText.text = $"{elapsedMs:F2} ms"; 
-        UpdateLossText();
+        UpdateTimeoutRateText();
     }
 
-    private void UpdateLossText() {
-        float lossRate = inputCount == 0 ? 0f : lostCount / (float)inputCount * 100f;
-        lossText.text = $"{lossRate:F2} %";
+    private void UpdateTimeoutRateText() {
+        timeoutRateText.text = $"{inputAckTracker.TimeoutRate * 100.0:F2} %";
+    }
+
+    private void PlayTimeoutEffect() {
+        effect.DOKill();
+        effect.color = Color.red;
+        effect.DOFade(0f, ColorDuration);
     }
 
     private static void TurnRedToWhite(Image target) {

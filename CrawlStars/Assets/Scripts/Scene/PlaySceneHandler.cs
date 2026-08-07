@@ -15,9 +15,9 @@ namespace Scene {
 
         protected override void Start() {
             base.Start();
-            GameManager.Instance.RegisterOnSendInput(benchMarker.OnPressKey);
             GameManager.Instance.RegisterOnDetectInput(aimRenderer.OnPressKey);
 
+            NetworkManager.Instance.InputSubmitted += benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
             NetworkManager.Instance.SnapshotReceived += HideWaitingCurtain;
 
@@ -29,9 +29,9 @@ namespace Scene {
         }
 
         private void OnDestroy() {
-            GameManager.Instance.UnregisterOnSendInput(benchMarker.OnPressKey);
             GameManager.Instance.UnregisterOnDetectInput(aimRenderer.OnPressKey);
 
+            NetworkManager.Instance.InputSubmitted -= benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
             NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
 

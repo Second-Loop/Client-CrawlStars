@@ -51,8 +51,6 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         isEnding = false;
     }
 
-    public void RegisterOnSendInput(Action<Vector2, Vector2> callback) => clientGameLoop.OnSendInput += callback;
-    public void UnregisterOnSendInput(Action<Vector2, Vector2> callback) => clientGameLoop.OnSendInput -= callback;
     public void RegisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.OnDetectInput += callback;
     public void UnregisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.OnDetectInput -= callback;
 

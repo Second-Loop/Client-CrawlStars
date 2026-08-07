@@ -23,6 +23,7 @@ namespace Network {
 
         public event Action<SnapshotDto> SnapshotReceived;
         public event Action<GameEndMessageDto> GameEndReceived;
+        public event Action<InputMessageDto> InputSubmitted;
 
         protected override void Awake() {
             base.Awake();
@@ -97,12 +98,14 @@ namespace Network {
                 throw new InvalidOperationException("Client input tick reached its maximum value.");
             }
 
-            return SendSocketJsonAsync(new InputMessageDto {
+            var input = new InputMessageDto {
                 ClientTick = nextClientTick++,
                 MoveDir = new Vector2Dto(moveDirection),
                 AttackDir = new Vector2Dto(attackDirection),
                 PressedAttack = attackDirection != Vector2.zero
-            });
+            };
+            InputSubmitted?.Invoke(input);
+            return SendSocketJsonAsync(input);
         }
 
         public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
