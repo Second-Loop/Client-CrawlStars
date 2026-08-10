@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Core.Map;
 using Core.Player;
 using Core.Projectile;
-using Core.Simulator;
 using Cysharp.Threading.Tasks;
 using Network;
 using Popup;
@@ -41,14 +40,7 @@ namespace Core.Controller {
             if (!isActive) return;
 
             accumulator += Time.deltaTime;
-            if (GameManager.Instance.IsBotModeActivated) {
-                if (accumulator >= InputInterval) {
-                    BotController.Instance.SendInputAsync(attackManager).Forget();
-                    accumulator %= InputInterval;
-                }
-            } else {
-                SendInputAsync().Forget();
-            }
+            SendInputAsync().Forget();
 
             OnDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
         }

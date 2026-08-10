@@ -20,17 +20,12 @@ namespace Scene {
         [SerializeField] private Image selectedModeImage;
         [SerializeField] private TextMeshProUGUI selectedModeText;
         
-        [SerializeField] private Toggle botModeToggle;
-
         protected override void Start() {
             base.Start();
             playButton.onClick.AddListener(OnClickPlayButton);
             settingButton.onClick.AddListener(OnClickSettingButton);
             selectCharacterButton.onClick.AddListener(OnClickSelectCharacterButton);
             selectModeButton.onClick.AddListener(OnClickSelectModeButton);
-
-            botModeToggle.onValueChanged.AddListener(OnValueChangedBotMode);
-            botModeToggle.isOn = GameManager.Instance.IsBotModeActivated;
 
             SetCurModeInfo();
             SetCurCharacterInfo();
@@ -48,10 +43,6 @@ namespace Scene {
         
         private void OnClickSelectModeButton() {
             OnClickSelectModeAsync().Forget();
-        }
-
-        private void OnValueChangedBotMode(bool isOn) {
-            GameManager.Instance.IsBotModeActivated = isOn;
         }
 
         private async UniTask OnClickSelectModeAsync() {
