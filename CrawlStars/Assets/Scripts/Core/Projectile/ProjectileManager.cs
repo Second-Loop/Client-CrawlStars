@@ -15,9 +15,12 @@ namespace Core.Projectile {
         }
 
         public void ApplySnapshot(IReadOnlyList<ProjectileData> projectiles) {
+            var curProjectileIds = new HashSet<string>();
+
             foreach (var projectile in projectiles) {
                 if (projectile == null || string.IsNullOrEmpty(projectile.Id)) continue;
 
+                curProjectileIds.Add(projectile.Id);
                 if (!projectileListeners.TryGetValue(projectile.Id, out var listener)) {
                     if (projectile.IsDestroyed) continue;
 
@@ -37,6 +40,8 @@ namespace Core.Projectile {
                 listener.MoveTo(projectile.Pos.ToVector2());
                 listener.RotateTo(projectile.Dir.ToVector2());
             }
+
+            DestroyAbsentProjectiles(curProjectileIds);
         }
 
         public void ClearListener() {
@@ -44,6 +49,21 @@ namespace Core.Projectile {
                 ObjectPooling.Instance.TryAbandon(Constants.Projectile, projectile.Value.gameObject);
             }
             projectileListeners.Clear();
+        }
+
+        // 파괴 스냅샷을 놓쳐서 지우지 못 한 투사체 제거 처리
+        private void DestroyAbsentProjectiles(HashSet<string> curProjectileIds) {
+            var absentProjectileIds = new List<string>();
+            foreach (var projectile in projectileListeners) {
+                if (curProjectileIds.Contains(projectile.Key)) continue;
+
+                ObjectPooling.Instance.TryAbandon(Constants.Projectile, projectile.Value.gameObject);
+                absentProjectileIds.Add(projectile.Key);
+            }
+
+            foreach (var projectileId in absentProjectileIds) {
+                projectileListeners.Remove(projectileId);
+            }
         }
     }
 }
