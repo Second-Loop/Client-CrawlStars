@@ -5,7 +5,6 @@ using Core.Player;
 using Cysharp.Threading.Tasks;
 using Network;
 using Core.Projectile;
-using Core.Simulator;
 using Managing;
 using Popup;
 using UnityEngine;
@@ -15,7 +14,6 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     [SerializeField] private ClientGameLoop clientGameLoop;
     private bool isEnding;
 
-    public bool IsBotModeActivated = false;
     public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
@@ -30,10 +28,6 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         BushVisibilityController.Instance.Initialize();
 
         NetworkManager.Instance.GameEndReceived += HandleGameEnd;
-
-        if (IsBotModeActivated) {
-            BotController.Instance.Initialize();
-        }
     }
 
     public void OnEnterPlayScene() {
