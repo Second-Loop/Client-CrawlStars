@@ -28,7 +28,9 @@ namespace Core.Player {
                 return true;
             }
 
-            Position = currentPosition;
+            if (!IsActive) {
+                Position = currentPosition;
+            }
             if (!HasAuthoritativeState || clientTick <= 0 || authoritativeSpeed <= 0f) {
                 IsActive = false;
                 return true;
@@ -44,12 +46,21 @@ namespace Core.Player {
         public void ObserveSnapshot(PlayerData player) {
             if (player == null) return;
 
-            authoritativePosition = player.Pos.ToVector2();
+            Vector2 nextAuthoritativePosition = player.Pos.ToVector2();
+            if (IsActive) {
+                Position += nextAuthoritativePosition - authoritativePosition;
+            }
+            authoritativePosition = nextAuthoritativePosition;
             authoritativeSpeed = Mathf.Max(0f, player.Speed);
             authoritativeRadius = Mathf.Max(0f, player.Radius);
             HasAuthoritativeState = true;
 
-            if (!IsActive || player.IsDead || player.LastProcessedClientTick >= pendingClientTick) {
+            if (!IsActive) {
+                EndAtAuthoritativePosition();
+                return;
+            }
+
+            if (player.IsDead || player.LastProcessedClientTick >= pendingClientTick) {
                 EndAtAuthoritativePosition();
             }
         }
