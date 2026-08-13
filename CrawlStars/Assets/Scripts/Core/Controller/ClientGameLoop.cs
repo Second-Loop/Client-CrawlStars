@@ -19,6 +19,7 @@ namespace Core.Controller {
         public Action<Vector2, bool> OnDetectInput;
 
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
+        private readonly LocalMovementPredictor localMovementPredictor = new LocalMovementPredictor();
 
         private float accumulator;
         private Vector2 previousMoveDirection;
@@ -30,10 +31,12 @@ namespace Core.Controller {
 
         private void Start() {
             NetworkManager.Instance.SnapshotReceived += HandleSnapshot;
+            NetworkManager.Instance.InputSubmitted += HandleInputSubmitted;
         }
 
         private void OnDestroy() {
             NetworkManager.Instance.SnapshotReceived -= HandleSnapshot;
+            NetworkManager.Instance.InputSubmitted -= HandleInputSubmitted;
         }
 
         private void Update() {
@@ -41,6 +44,7 @@ namespace Core.Controller {
 
             accumulator += Time.deltaTime;
             SendInputAsync().Forget();
+            UpdateLocalPrediction();
 
             OnDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
         }
@@ -53,6 +57,7 @@ namespace Core.Controller {
                 return;
             }
 
+            localMovementPredictor.Reset();
             curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
@@ -67,6 +72,9 @@ namespace Core.Controller {
             }
 
             this.isActive = isActive;
+            if (!isActive) {
+                CancelLocalPrediction();
+            }
             SetActiveInput(isActive);
         }
 
@@ -78,6 +86,7 @@ namespace Core.Controller {
             SetActive(false);
             accumulator = 0;
             previousMoveDirection = Vector2.zero;
+            localMovementPredictor.Reset();
             isInitialized = false;
         }
 
@@ -106,6 +115,37 @@ namespace Core.Controller {
             await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection);
         }
 
+        private void HandleInputSubmitted(InputMessageDto input) {
+            var listener = PlayerManager.Instance.MyListener;
+            if (!isActive || input == null || listener == null) return;
+
+            Vector2 moveDirection = input.MoveDir.ToVector2();
+            if (!localMovementPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
+
+            if (moveDirection.sqrMagnitude > Mathf.Epsilon) {
+                listener.RotateTo(moveDirection);
+            } else if (localMovementPredictor.HasAuthoritativeState) {
+                listener.MoveTo(localMovementPredictor.Position);
+            }
+        }
+
+        private void UpdateLocalPrediction() {
+            var listener = PlayerManager.Instance.MyListener;
+            if (listener == null) return;
+
+            if (localMovementPredictor.TryUpdate(Time.deltaTime, MapHelper.CachedMapData, out var position)) {
+                listener.MoveTo(position);
+            }
+        }
+
+        private void CancelLocalPrediction() {
+            localMovementPredictor.Cancel();
+            var listener = PlayerManager.Instance.MyListener;
+            if (listener != null && localMovementPredictor.HasAuthoritativeState) {
+                listener.MoveTo(localMovementPredictor.Position);
+            }
+        }
+
         private void HandleSnapshot(SnapshotDto snapshot) {
             if (!isInitialized) {
                 Debug.LogWarning("ClientGameLoop.HandleSnapshot::Not initialized.");
@@ -131,12 +171,22 @@ namespace Core.Controller {
                 return;
             }
 
-            PlayerManager.Instance.ApplySnapshot(snapshot.Players);
+            ObserveLocalPlayerSnapshot(snapshot.Players);
+            PlayerManager.Instance.ApplySnapshot(snapshot.Players, localMovementPredictor.IsActive);
             BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
 
             if (!isActive) {
                 SetActive(true);
+            }
+        }
+
+        private void ObserveLocalPlayerSnapshot(IReadOnlyList<PlayerData> players) {
+            foreach (var player in players) {
+                if (player == null || player.Id != PlayerManager.Instance.MyId) continue;
+
+                localMovementPredictor.ObserveSnapshot(player);
+                return;
             }
         }
     }
