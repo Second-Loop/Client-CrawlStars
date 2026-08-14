@@ -78,6 +78,7 @@ namespace Core.Prediction {
                 return;
             }
 
+            // 이미 서버에서 처리된 움직임은 예측할 필요 없음
             if (player.IsDead || player.LastProcessedClientTick >= pendingClientTick) {
                 EndAtServerPosition();
             }
@@ -97,6 +98,7 @@ namespace Core.Prediction {
                 return true;
             }
 
+            // 점점 빠르게 이동
             float progress = elapsed / PredictionDuration;
             float speedRatio = progress * progress;
             Vector2 movement = predictionDir * (serverSpeed * speedRatio * deltaTime);
