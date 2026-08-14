@@ -123,10 +123,13 @@ namespace Core.Controller {
             Vector2 moveDirection = input.MoveDir.ToVector2();
             if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
 
-            if (moveDirection.sqrMagnitude > Mathf.Epsilon) {
+            bool hasDirection = moveDirection.sqrMagnitude > Mathf.Epsilon;
+            if (hasDirection) {
+                // 캐릭터 바로 회전
                 listener.RotateTo(moveDirection);
             } else if (localPredictor.HasServerState) {
-                listener.MoveTo(localPredictor.Position);
+                // 정지 입력으로 전환된 경우에 서버 위치로 보정 (Cancel에서 대입함)
+                listener.MoveTo(localPredictor.CurPosition);
             }
         }
 
@@ -134,7 +137,7 @@ namespace Core.Controller {
             var listener = PlayerManager.Instance.MyListener;
             if (listener == null) return;
 
-            if (localPredictor.TryUpdate(Time.deltaTime, out var position)) {
+            if (localPredictor.TryUpdatePosition(out var position)) {
                 listener.MoveTo(position);
             }
         }
@@ -143,7 +146,7 @@ namespace Core.Controller {
             localPredictor.Cancel();
             var listener = PlayerManager.Instance.MyListener;
             if (listener != null && localPredictor.HasServerState) {
-                listener.MoveTo(localPredictor.Position);
+                listener.MoveTo(localPredictor.CurPosition);
             }
         }
 
@@ -184,10 +187,10 @@ namespace Core.Controller {
 
         private void ObserveLocalPlayerSnapshot(IReadOnlyList<PlayerData> players) {
             foreach (var player in players) {
-                if (player == null || player.Id != PlayerManager.Instance.MyId) continue;
-
-                localPredictor.ObserveSnapshot(player);
-                return;
+                if (player != null && player.Id == PlayerManager.Instance.MyId) {
+                    localPredictor.ObserveSnapshot(player);
+                    return;
+                }
             }
         }
     }
