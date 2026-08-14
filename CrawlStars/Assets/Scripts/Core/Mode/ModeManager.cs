@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace Core {
+namespace Core.Mode {
     public class ModeManager {
         private static ModeManager instance;
         public static ModeManager Instance => instance ??= new ModeManager();

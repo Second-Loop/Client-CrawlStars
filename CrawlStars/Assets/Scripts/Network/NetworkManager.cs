@@ -2,6 +2,8 @@ using System;
 using System.Net;
 using System.Threading;
 using Core;
+using Core.Character;
+using Core.Mode;
 using Core.Player;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;

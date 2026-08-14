@@ -1,4 +1,5 @@
 using Core;
+using Core.Character;
 using UnityEngine;
 using UnityEngine.UI;
 using Utility;

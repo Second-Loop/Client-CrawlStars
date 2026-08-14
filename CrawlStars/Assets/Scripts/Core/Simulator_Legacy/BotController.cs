@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using Core.Character;
 using Core.Map;
 using Core.Player;
 using Core.Projectile;
 using Cysharp.Threading.Tasks;
 using Network;
 using UnityEngine;
+using CharacterInfo = Core.Character.CharacterInfo;
 
 namespace Core.Simulator {
     public class BotController {

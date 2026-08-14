@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Core;
+using Core.Character;
+using Core.Mode;
 using Core.Player;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;

@@ -1,0 +1,20 @@
+using System;
+using Core;
+using Core.Character;
+using Core.Player;
+using UnityEngine;
+
+namespace Core.Character {
+    [CreateAssetMenu(fileName = "CharacterInfo", menuName = "Scriptable Objects/CharacterInfo")]
+    public class CharacterInfoSo : ScriptableObject {
+
+        [Serializable]
+        public class CharacterItemInfo {
+            public CharacterManager.CharacterType characterType;
+            public string description;
+            public string iconSpriteName;
+        }
+
+        public CharacterItemInfo[] items;
+    }
+}

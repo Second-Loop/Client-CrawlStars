@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace Core {
+namespace Core.Character {
     public class CharacterManager {
         public enum CharacterType {
             Shelly, Colt, Lily

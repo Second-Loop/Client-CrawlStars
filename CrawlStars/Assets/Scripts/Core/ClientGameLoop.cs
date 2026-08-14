@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Core.Inputs;
 using Core.Map;
 using Core.Player;
 using Core.Prediction;
@@ -9,7 +10,7 @@ using Network;
 using Popup;
 using UnityEngine;
 
-namespace Core.Controller {
+namespace Core {
     public class ClientGameLoop : MonoBehaviour {
         [SerializeField] private InputProvider inputProvider;
         [SerializeField] private AttackManager attackManager;

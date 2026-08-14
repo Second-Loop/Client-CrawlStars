@@ -2,7 +2,7 @@ using UnityEngine;
 using Utility;
 using Cache = Utility.Cache;
 
-namespace Core.Controller {
+namespace Core.Inputs {
     [DefaultExecutionOrder(-100)] // ClientGameLoop.Update 보다 먼저 실행되도록 보장
     public class InputProvider : MonoBehaviour {
         private enum AimButton { None, Left, Right }

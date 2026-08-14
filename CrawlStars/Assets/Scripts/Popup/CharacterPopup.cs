@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Core;
+using Core.Character;
 using Cysharp.Threading.Tasks;
 using Popup;
 using UnityEngine;

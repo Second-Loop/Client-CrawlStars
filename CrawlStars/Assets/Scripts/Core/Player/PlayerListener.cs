@@ -1,3 +1,4 @@
+using Core.Character;
 using Network;
 using UnityEngine;
 using Utility;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Core;
+using Core.Character;
 using Core.Player;
 using TMPro;
 using Unity.Collections.LowLevel.Unsafe;
@@ -7,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using Utility;
-using CharacterInfo = Core.CharacterInfo;
+using CharacterInfo = Core.Character.CharacterInfo;
 
 public class CharacterItem : SelectItem {
     public void SetData(KeyValuePair<CharacterManager.CharacterType, CharacterInfo.Definition> info, UnityAction buttonAction) {
