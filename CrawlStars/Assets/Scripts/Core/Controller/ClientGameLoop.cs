@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.Map;
 using Core.Player;
+using Core.Prediction;
 using Core.Projectile;
 using Cysharp.Threading.Tasks;
 using Network;

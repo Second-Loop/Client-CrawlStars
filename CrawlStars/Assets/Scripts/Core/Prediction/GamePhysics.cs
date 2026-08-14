@@ -1,7 +1,8 @@
+using Core.Map;
 using UnityEngine;
 
-namespace Core.Map {
-    public static class PlayerMapMovement {
+namespace Core.Prediction {
+    public static class GamePhysics {
         public static Vector2 Move(Vector2 position, Vector2 movement, float radius, MapData mapData) {
             Vector2 result = position;
 

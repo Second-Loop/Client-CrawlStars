@@ -1,7 +1,8 @@
 using Core.Map;
+using Core.Player;
 using UnityEngine;
 
-namespace Core.Player {
+namespace Core.Prediction {
     public class LocalMovementPredictor {
         private const float PredictionDuration = 0.12f;
 
@@ -80,7 +81,7 @@ namespace Core.Player {
             float progress = elapsed / PredictionDuration;
             float speedRatio = progress * progress;
             Vector2 movement = predictionDirection * (authoritativeSpeed * speedRatio * frameDelta);
-            Position = PlayerMapMovement.Move(Position, movement, authoritativeRadius, mapData);
+            Position = GamePhysics.Move(Position, movement, authoritativeRadius, mapData);
             position = Position;
             return true;
         }
