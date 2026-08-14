@@ -40,7 +40,7 @@ namespace Core.Player {
             }
         }
 
-        public void ApplySnapshot(IReadOnlyList<PlayerData> players) {
+        public void ApplySnapshot(IReadOnlyList<PlayerData> players, bool preserveLocalMovement = false) {
             foreach (var player in players) {
                 if (player == null || string.IsNullOrEmpty(player.Id)) continue;
 
@@ -58,8 +58,11 @@ namespace Core.Player {
                     continue;
                 }
 
-                listener.MoveTo(player.Pos.ToVector2());
-                listener.RotateTo(player.MoveDir.ToVector2());
+                bool shouldPreserveMovement = preserveLocalMovement && player.Id == MyId;
+                if (!shouldPreserveMovement) {
+                    listener.MoveTo(player.Pos.ToVector2());
+                    listener.RotateTo(player.MoveDir.ToVector2());
+                }
 
                 if (player.PressedAttack) {
                     listener.RotateTo(player.AttackDir.ToVector2());

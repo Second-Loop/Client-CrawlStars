@@ -4,7 +4,7 @@ namespace Core.Map {
     public static class MapHelper {
         public static MapData CachedMapData { get; set; }
 
-        private static float HalfTileSize => GameConfig.TileSize * 0.5f;
+        public static float HalfTileSize => GameConfig.TileSize * 0.5f;
 
         public static Vector2 GetMapStartPos(MapData mapData) => new Vector2(
             -HalfTileSize * (mapData.width - 1),
@@ -18,9 +18,10 @@ namespace Core.Map {
             if (x < 0 || x >= mapData.width) return true;
             if (y < 0 || y >= mapData.height) return true;
 
-            int tileType = mapData.map[y][x];
-            return (Tile.TileType)tileType is Tile.TileType.Wall or Tile.TileType.Water;
+            return IsPathBlockedTileType(mapData.map[y][x]);
         }
+
+        public static bool IsPathBlockedTileType(int tileType) => (Tile.TileType)tileType is Tile.TileType.Wall or Tile.TileType.Water;
 
         public static bool IsInBush(Vector2Int pos) => IsInBush(pos.x, pos.y);
 

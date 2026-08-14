@@ -23,7 +23,6 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
 
         MapHelper.CachedMapData = readyEvent.Map;
         mapRenderer.Render(MapHelper.CachedMapData);
-
         clientGameLoop.Initialize(readyEvent.Players);
         BushVisibilityController.Instance.Initialize();
 
@@ -36,19 +35,22 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     }
 
     public void Dispose() {
-        clientGameLoop.Clear();
+        MapHelper.CachedMapData = null;
         mapRenderer.Clear();
+        clientGameLoop.Clear();
+        isEnding = false;
+
         PlayerManager.Instance.ClearListeners();
         ProjectileManager.Instance.ClearListener();
+
         NetworkManager.Instance.GameEndReceived -= HandleGameEnd;
         NetworkManager.Instance.DisconnectSocketAsync().Forget();
-        isEnding = false;
     }
 
     public void RegisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.OnDetectInput += callback;
     public void UnregisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.OnDetectInput -= callback;
 
-    public async UniTask EndGameAsync(string result) {
+    private async UniTask EndGameAsync(string result) {
         if (isEnding) return;
         isEnding = true;
 

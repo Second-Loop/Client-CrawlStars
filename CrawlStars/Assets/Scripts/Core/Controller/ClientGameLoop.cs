@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.Map;
 using Core.Player;
+using Core.Prediction;
 using Core.Projectile;
 using Cysharp.Threading.Tasks;
 using Network;
@@ -19,6 +20,7 @@ namespace Core.Controller {
         public Action<Vector2, bool> OnDetectInput;
 
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
+        private readonly LocalMovementPredictor localPredictor = new LocalMovementPredictor();
 
         private float accumulator;
         private Vector2 previousMoveDirection;
@@ -30,10 +32,12 @@ namespace Core.Controller {
 
         private void Start() {
             NetworkManager.Instance.SnapshotReceived += HandleSnapshot;
+            NetworkManager.Instance.InputSubmitted += HandleInputSubmitted;
         }
 
         private void OnDestroy() {
             NetworkManager.Instance.SnapshotReceived -= HandleSnapshot;
+            NetworkManager.Instance.InputSubmitted -= HandleInputSubmitted;
         }
 
         private void Update() {
@@ -41,6 +45,7 @@ namespace Core.Controller {
 
             accumulator += Time.deltaTime;
             SendInputAsync().Forget();
+            UpdateLocalPrediction();
 
             OnDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
         }
@@ -53,6 +58,7 @@ namespace Core.Controller {
                 return;
             }
 
+            localPredictor.Reset();
             curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
@@ -67,6 +73,9 @@ namespace Core.Controller {
             }
 
             this.isActive = isActive;
+            if (!isActive) {
+                CancelLocalPrediction();
+            }
             SetActiveInput(isActive);
         }
 
@@ -78,6 +87,7 @@ namespace Core.Controller {
             SetActive(false);
             accumulator = 0;
             previousMoveDirection = Vector2.zero;
+            localPredictor.Reset();
             isInitialized = false;
         }
 
@@ -106,6 +116,40 @@ namespace Core.Controller {
             await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection);
         }
 
+        private void HandleInputSubmitted(InputMessageDto input) {
+            var listener = PlayerManager.Instance.MyListener;
+            if (!isActive || input == null || listener == null) return;
+
+            Vector2 moveDirection = input.MoveDir.ToVector2();
+            if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
+
+            bool hasDirection = moveDirection.sqrMagnitude > Mathf.Epsilon;
+            if (hasDirection) {
+                // 캐릭터 바로 회전
+                listener.RotateTo(moveDirection);
+            } else if (localPredictor.HasServerState) {
+                // 정지 입력으로 전환된 경우에 서버 위치로 보정 (Cancel에서 대입함)
+                listener.MoveTo(localPredictor.CurPosition);
+            }
+        }
+
+        private void UpdateLocalPrediction() {
+            var listener = PlayerManager.Instance.MyListener;
+            if (listener == null) return;
+
+            if (localPredictor.TryUpdatePosition(out var position)) {
+                listener.MoveTo(position);
+            }
+        }
+
+        private void CancelLocalPrediction() {
+            localPredictor.Cancel();
+            var listener = PlayerManager.Instance.MyListener;
+            if (listener != null && localPredictor.HasServerState) {
+                listener.MoveTo(localPredictor.CurPosition);
+            }
+        }
+
         private void HandleSnapshot(SnapshotDto snapshot) {
             if (!isInitialized) {
                 Debug.LogWarning("ClientGameLoop.HandleSnapshot::Not initialized.");
@@ -131,12 +175,22 @@ namespace Core.Controller {
                 return;
             }
 
-            PlayerManager.Instance.ApplySnapshot(snapshot.Players);
+            ObserveLocalPlayerSnapshot(snapshot.Players);
+            PlayerManager.Instance.ApplySnapshot(snapshot.Players, localPredictor.IsActive);
             BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
 
             if (!isActive) {
                 SetActive(true);
+            }
+        }
+
+        private void ObserveLocalPlayerSnapshot(IReadOnlyList<PlayerData> players) {
+            foreach (var player in players) {
+                if (player != null && player.Id == PlayerManager.Instance.MyId) {
+                    localPredictor.ObserveSnapshot(player);
+                    return;
+                }
             }
         }
     }
