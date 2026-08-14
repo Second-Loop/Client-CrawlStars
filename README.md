@@ -1,7 +1,7 @@
 # Crawl Stars
 
-> Unity 기반 서버 권위형 2D 실시간 멀티플레이 액션 클라이언트<br>
-> 입력, 매치메이킹, 30Hz 스냅샷 동기화, 전투 표현, 봇 AI, UI, 성능 개선까지 클라이언트 전반 설계 및 구현
+> Unity 기반 서버 권위형 2D 실시간 멀티플레이 액션 게임 - 브롤스타즈 모작<br>
+> 서버가 30Hz 시뮬레이션으로 게임 상태를 최종 판정하고, 로컬 예측과 서버 보정으로 조작 반응성을 확보
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/e851789d-527f-4569-875e-4519f9df341e" width="49%" />
@@ -16,13 +16,61 @@
 
 | 항목 | 내용                                                                                |
 | --- |-----------------------------------------------------------------------------------|
-| 개발 기간 | 2026년 5월 13일 ~ 진행 중                                                             |
-| 담당 | Unity 클라이언트 구조, 게임플레이, 네트워크, UI, 봇, 최적화, 서버 연동                                    |
+| 개발 기간 | 2026년 5월 13일 ~ 진행 중                                                          |
+| 팀 구성 | 클라이언트 1명, 서버 1명 |
+| 담당 | 클라이언트 전반, 서버 권위 동기화, 클라이언트 예측·보정, 매치메이킹, 네트워크                    |
 | 엔진 | Unity `6000.3.15f1`, URP 2D                                                       |
-| 주요 기술 | C#, UniTask, REST, WebSocket, Addressables, Newtonsoft.Json, DOTween              |
+| 주요 기술 | C#, UniTask, REST, WebSocket, Addressables, DOTween              |
 | 서버 | [Second-Loop/Server-CrawlStars](https://github.com/Second-Loop/Server-CrawlStars) |
 
-브롤스타즈의 짧고 즉각적인 전투 경험을 네트워크 게임 클라이언트 관점에서 재구성. 서버 상태의 안정적인 표현, 입력 지연과 런타임 할당 감소, 비동기 매칭과 씬 전환의 일관된 흐름에 집중.
+<br/>
+
+## 핵심 기술
+
+### 1. 서버 권위 모델
+
+클라이언트는 입력 명령만 전송하고 게임 상태를 확정하지 않음. 서버가 30Hz tick에서 입력을 처리하고 권위 상태를 스냅샷으로 반환.
+
+| 구분 | 처리 기준 |
+| --- | --- |
+| 클라이언트 전송 | `MoveDir`, `AttackDir`, `PressedAttack`, `ClientTick` |
+| 서버 최종 판정 | 위치, 충돌, 공격 승인, 투사체, 피해, 사망, 승패 |
+| 클라이언트 상태 적용 | `PlayerManager`, `ProjectileManager`, `BushVisibilityController` |
+| 로컬 예외 처리 | 내 플레이어의 이동 위치만 최대 0.12초 예측 |
+
+`NetworkManager`가 WebSocket 메시지를 `SocketMessageDto`로 역직렬화하고 `ClientGameLoop`에 스냅샷 전달. `ClientGameLoop`는 플레이어, 투사체, 부시 시야를 각각의 매니저에 분배. 로컬 예측 중에도 공격 승인, HP, 사망 등 전투 결과는 항상 서버 값 적용.
+
+<br/>
+
+### 2. 제한적 이동 예측과 서버 보정
+
+예측 대상은 로컬 플레이어의 위치로 한정. 지속적인 시뮬레이션이나 원격 플레이어 보간 대신, 입력 반응성이 중요한 이동 시작·방향 전환 구간만 보완.
+
+1. `NetworkManager.SendInputAsync`가 `ClientTick`을 증가시키고 `InputSubmitted` 이벤트 발생
+2. `ClientGameLoop`가 입력 방향 변경을 감지해 `LocalMovementPredictor` 활성화
+3. 마지막 서버 속도와 현재 입력 방향으로 프레임별 이동량 계산
+4. `GamePhysics.GetNextPosition`으로 맵 경계와 Wall·Water 충돌 검사
+5. 스냅샷 수신 시 서버 위치 변화량을 예측 위치에 반영
+6. 서버 ACK, 정지 입력, 사망 또는 0.12초 경과 시 서버 위치로 보정
+
+프레임별 예측 이동량은 `direction × serverSpeed × progress² × deltaTime`으로 계산. 예측 초반 이동량을 낮게 시작해 서버 위치로 되돌아갈 때 발생하는 시각적 오차를 제한.
+
+예측 중 `PlayerManager.ApplySnapshot`은 내 플레이어 transform 갱신만 보류. `LocalMovementPredictor.ObserveSnapshot`은 `nextServerPos - serverPos`를 현재 예측 위치에 더하고, `LastProcessedClientTick >= pendingClientTick`이면 예측 종료 후 서버 위치 적용.
+
+현재 구현은 스냅샷 버퍼 기반 보간이 아니라 로컬 예측과 서버 보정(reconciliation) 구조. 원격 플레이어 위치는 수신한 스냅샷을 즉시 적용.
+
+<br/>
+
+### 3. latest-only 스냅샷 대응
+
+일반 게임플레이 스냅샷은 서버에서 최신 상태 하나만 유지하는 latest-only 방식. 클라이언트는 중간 스냅샷 누락을 정상 조건으로 처리.
+
+- `InputAckTracker`: 높은 `LastProcessedClientTick` 수신 시 그 이하의 pending input을 처리 완료로 제거
+- 지연 측정: 정확히 일치하는 `ClientTick`이 남아 있을 때만 왕복 처리 시간 계산
+- 타임아웃: ACK가 3초 동안 확인되지 않은 입력만 별도 집계
+- `ProjectileManager`: 최신 스냅샷의 투사체 ID 집합과 로컬 Dictionary를 비교해 누락된 투사체 회수
+
+파괴 이벤트 하나에 의존하지 않고 최신 권위 상태와 로컬 상태의 차이를 기준으로 복구.
 
 <br/>
 
@@ -66,143 +114,86 @@
 
 ```mermaid
 flowchart LR
-    Input["InputProvider\n이동·조준·공격"] --> Loop["ClientGameLoop\n입력 전송·스냅샷 적용"]
-    Cooldown["AttackManager\n공격 충전·스킬 쿨다운"] --> Loop
-    Bot["BotController\nA*·회피·추격·탐색"] --> Loop
+    Input["InputProvider\n입력 수집"] --> Loop["ClientGameLoop\n입력 전송·상태 적용"]
+    Attack["AttackManager\n공격·스킬 입력 관리"] --> Loop
+    Loop --> Network["NetworkManager\nREST·WebSocket·ClientTick"]
+    Network <--> Server["Server-CrawlStars\n30Hz 시뮬레이션·최종 판정"]
 
-    Loop --> Network["NetworkManager\n매칭·메시지 분기·ClientTick"]
-    Network --> REST["RestApiClient"]
-    Network --> WS["WebSocketClient"]
-    REST <--> Server["Server-CrawlStars"]
-    WS <--> Server
-
+    Network --> Ack["InputAckTracker\n처리 지연·타임아웃 측정"]
     Network --> Loop
-    Loop --> Players["PlayerManager"]
+
+    Loop --> Predictor["LocalMovementPredictor\n로컬 이동 예측·서버 보정"]
+    Physics["GamePhysics\n맵 경계·벽 충돌"] --> Predictor
+    Predictor --> Players["PlayerManager"]
+    Loop --> Players
     Loop --> Projectiles["ProjectileManager"]
     Loop --> Visibility["BushVisibilityController"]
+
     Players --> Pool["Object Pool"]
     Projectiles --> Pool
-    Visibility --> Players
-
-    Scene["SceneController\nSplash → Main → Play"] --> UI["Popup·Countdown·StatusBar"]
+    Scene["SceneController\nSplash → Main → Play"] --> UI["Popup·전투 UI"]
     Loop --> UI
 ```
 
-네트워크 계층은 전송과 메시지 해석, 게임 루프는 서버 상태 전달, 플레이어·투사체 매니저는 DTO의 Unity 오브젝트 투영 담당. 씬과 팝업은 게임 상태와 분리된 비동기 흐름으로 관리.
+`NetworkManager`가 서버 메시지 송수신을 담당하고, `ClientGameLoop`가 입력 전송과 스냅샷 적용 순서를 조율. 
+
+게임 상태 표현은 플레이어·투사체·시야 매니저로 분리하고, 로컬 이동 예측은 별도 객체로 구성해 서버 상태 적용과 분리. 
+
+씬 전환과 팝업은 UniTask 기반의 비동기 흐름으로 관리.
 
 <br/>
 
 ## 설계와 문제 해결
 
-### 1. 로컬 프로토타입에서 서버 권위형 구조로 전환
+### 1. 입력 지연을 눈에 보이는 값으로 추적
 
-서버 개발과 병행하기 전 30Hz 로컬 시뮬레이터로 핵심 전투 규칙 검증. JSON 맵을 읽어 타일 프리팹을 배치하고 플레이어·투사체·타일에 풀링 적용. Sprite 동적 로드 결과도 캐싱해 반복 생성 비용 억제.
+입력은 서버 tick과 같은 30Hz로 전송하되, 이동 방향 변경이나 공격 발생 시 다음 주기를 기다리지 않고 즉시 전송. 실행 순서는 `NetworkManager → InputProvider → ClientGameLoop`로 고정해 수신 처리와 입력 수집을 같은 프레임에서 안정적으로 연결.
 
-플레이어는 원, 벽은 사각형으로 단순화하고 Closest Point 기반 원·사각형 충돌과 원·원 충돌 구현. `Update`에서 공격 입력을 저장한 뒤 tick에서 소비해 짧은 클릭 누락 방지. 회전은 `Atan2`로 모든 사분면 처리.
+`InputAckTracker`는 각 `ClientTick`의 전송 시각을 기록하고 스냅샷의 `LastProcessedClientTick`과 비교해 서버 처리 시간을 계산. 더 높은 tick이 확인되면 중간 스냅샷이 합쳐진 정상 상황으로 처리하고, 3초 동안 확인되지 않은 입력만 타임아웃으로 집계. `BenchMarker`에서 지연 시간, 대기 입력 수와 타임아웃 비율을 시각화.
 
-서버 연동 후 로컬 판정 제거. `클라이언트 입력 → 서버 tick 시뮬레이션 → snapshot 수신 → 화면 표현`으로 책임 재분리. `ClientGameLoop`는 입력 전송, `PlayerManager`와 `ProjectileManager`는 서버 상태 표현에 집중. [PR #2](https://github.com/Second-Loop/Client-CrawlStars/pull/2)에서 [PR #6](https://github.com/Second-Loop/Client-CrawlStars/pull/6)의 검증 후 [PR #12](https://github.com/Second-Loop/Client-CrawlStars/pull/12)에서 전환.
-
-<br/>
-
-### 2. 체감 지연을 원인별로 분해
-
-초기 개발 환경에서 입력 응답 지연 300에서 1,000ms 측정. Cloudflare Proxy 경유 구간을 확인하고 DNS Only로 전환해 평균 약 50ms까지 단축. 지연 개선과 함께 프록시 보호 상실, 서버 IP 노출, 방화벽·인증 강화 필요성도 절충 비용으로 기록.
-
-기본 입력 전송률은 서버 tick과 같은 30Hz. 방향 전환 또는 공격 감지 시 다음 주기까지 기다리지 않고 즉시 전송.
-
-- `NetworkManager`: 실행 순서 `-200`, 게임 로직보다 먼저 수신 큐 처리
-- `InputProvider`: 실행 순서 `-100`, `ClientGameLoop.Update`보다 먼저 입력 확정
-- `ClientGameLoop`: 고정 주기와 상태 변화 즉시 전송 병행
-- `ClientTick`: 1부터 증가하는 입력 시퀀스 전송
-- `LastProcessedClientTick`: 서버가 처리한 마지막 입력과 다음 입력 번호 동기화
-
-클라이언트 예측 도입 전 네트워크 경로, 입력 대기, 프레임 실행 순서에서 발생하는 지연부터 제거. [PR #24](https://github.com/Second-Loop/Client-CrawlStars/pull/24)와 [서버 동기화 커밋](https://github.com/Second-Loop/Client-CrawlStars/commit/7a208eb5c9f5e06511cf725967e9af39c1cb83ae)에 기록.
+네트워크 경로도 별도로 측정. Cloudflare Proxy 경유가 지연에 미치는 영향을 확인한 뒤 DNS Only로 전환해 평균 응답 시간을 약 50ms까지 단축. 예측 도입 전에 전송 주기, 프레임 실행 순서와 네트워크 경로에서 발생하는 지연부터 분리.
 
 <br/>
 
-### 3. 측정 가능한 성능 개선
+### 2. 코드와 서버 계약이 함께 바뀌도록 관리
 
-`BenchMarker`로 입력 감지, 응답 시간, 3초 기준 timeout 비율 시각화. 실제 패킷 손실률이 아닌 입력 후 대응 snapshot까지의 애플리케이션 체감 지표로 활용.
+매치메이킹 요청에 선택한 게임 모드와 캐릭터 타입을 포함하고, 응답의 모드·캐릭터·세션 정보가 요청과 일치하는지 검증. Ready 메시지와 게임플레이 스냅샷에서도 같은 `CharacterType`을 사용해 모든 클라이언트가 동일한 참가자 외형을 구성.
 
-- 메시지 종류 확인과 DTO 역직렬화를 통합해 메시지당 2회에서 1회로 축소
-- 모든 수신 타입을 `SocketMessageDto` 하나로 분기
-- `Vector2Dto`를 class에서 struct로 변경해 반복 할당 감소
-- 맵 타일, 플레이어, 투사체, 선택 UI에 오브젝트 풀 적용
-- Sprite 조회 결과 캐싱으로 반복 `Resources.Load` 방지
+조준선은 고정 길이 대신 선택 캐릭터의 일반 공격·스킬 사거리를 반영. 캐릭터 수치와 맵 설정은 서버와 공유하는 `game-config.json`에서 읽어 화면 표현과 서버 판정의 기준을 통일. 관련 변경: 
 
-측정 도구는 [PR #13](https://github.com/Second-Loop/Client-CrawlStars/pull/13), GC Alloc 개선은 [PR #24](https://github.com/Second-Loop/Client-CrawlStars/pull/24)에 기록.
+REST와 WebSocket 메시지 형식은 [OpenAPI](CrawlStars/Docs/References/API/openapi.yaml)와 [AsyncAPI](CrawlStars/Docs/References/API/asyncapi.yaml)로 관리. Unity 빌드 전처리 과정에서 서버 저장소의 최신 게임 설정과 API 문서를 가져와 검증해 클라이언트 코드와 서버 계약의 불일치 방지.
 
 <br/>
 
-### 4. 반복 가능한 게임 루프와 비동기 생명주기
+### 3. 매칭부터 재시작까지 하나의 비동기 흐름으로 연결
 
-`Main → Play → 전투 → 승패 → Main`을 에디터 재시작 없이 반복하는 흐름부터 구성. 공용 매니저는 Splash 씬에서 생성하고 `DontDestroyOnLoad`로 유지. 다음 씬을 Additive 비동기 로드한 뒤 활성화하고 이전 씬을 언로드해 전환 순간의 집중 부하 완화.
+`Main → Play → 전투 → 승패 → Main` 흐름을 에디터 재시작 없이 반복하도록 구성. 공용 매니저는 Splash 씬에서 생성한 뒤 `DontDestroyOnLoad`로 유지하고, 다음 씬을 Additive 방식으로 비동기 로드해 활성화한 다음 이전 씬을 정리.
 
-매칭, WebSocket, 팝업, 씬 로드를 UniTask 기반으로 연결. `MatchingPopup`이 취소 토큰을 소유하고 취소 시 매칭 대기와 소켓 정리. 연결별 소켓 인스턴스 분리, 닫기 handshake 3초 timeout, 애플리케이션 종료 시 즉시 abort.
+매칭, WebSocket 연결, 팝업과 씬 전환은 UniTask로 연결. `MatchingPopup`이 취소 토큰을 소유해 매칭 취소 시 대기 요청과 소켓을 함께 정리. 연결마다 WebSocket 인스턴스를 분리하고, 종료 핸드셰이크에는 3초 제한 시간을 적용하며, 애플리케이션 종료 시 즉시 연결 중단.
 
-팝업은 추상화된 Param·Result와 `UniTaskCompletionSource`로 결과 반환. `await PopupManager.ShowAsync` 형태로 호출부의 흐름 유지. 열린 순서와 Canvas sorting order는 중앙 관리.
-
-<br/>
-
-### 5. 맵 규칙과 봇 판단
-
-맵은 서버가 전달한 2차원 타일 배열을 기준으로 렌더링. Ground, Wall, SpawnPoint, Bush, Water를 같은 좌표 변환 규칙으로 처리하고 Wall과 Water는 봇 경로에서 차단.
-
-부시는 BFS로 연결 영역을 번호화해 같은 부시 안의 적만 표시. 아군은 항상 표시하도록 팀 규칙 분리. 로컬 테스트용 봇은 사람 입력과 같은 메시지 경로 사용.
-
-- A*와 Manhattan 휴리스틱 기반 추격·후퇴 경로 탐색
-- 출발·목표 타일 기준 경로 결과 캐싱
-- 투사체 진행 벡터에 플레이어 위치를 투영해 위험 경로와 회피 방향 계산
-- 낮은 체력에서 후퇴, 적이 없으면 이동 가능한 임의 타일 탐색
-- 캐릭터별 일반 공격·스킬 사거리와 공통 쿨다운 반영
-
-관련 구현은 [PR #16](https://github.com/Second-Loop/Client-CrawlStars/pull/16), [PR #22](https://github.com/Second-Loop/Client-CrawlStars/pull/22), [PR #23](https://github.com/Second-Loop/Client-CrawlStars/pull/23)에 기록.
+팝업 결과는 `UniTaskCompletionSource`로 반환. 호출부는 `await PopupManager.ShowAsync` 형태로 사용자 선택을 기다리고, 팝업 표시 순서와 Canvas 정렬은 중앙에서 관리.
 
 <br/>
 
-### 6. 라이브러리를 블랙박스로 두지 않는 네트워크 설계
+### 4. 로컬 프로토타입에서 서버 구조로 책임 이전
 
-모바일과 WebGL 대응을 위해 NativeWebSocket 채택. REST와 WebSocket 라이브러리 내부 구현도 함께 추적해 버퍼링, HTTP 파싱, 상태 코드 처리, DNS, SSL/TLS의 책임 경계 확인. 현재 REST 런타임은 플랫폼 경로 호환성을 위해 `UnityWebRequest` 사용.
+서버 구현 전 30Hz 로컬 시뮬레이터와 봇으로 이동, 충돌, 공격과 전투 흐름을 우선 검증. A* 경로 탐색, 추격·후퇴, 투사체 회피까지 클라이언트에서 시험한 뒤 서버 구현 완료 시점에 판정 책임을 서버로 이전. 현재 클라이언트는 사람과 봇을 같은 `PlayerData` 스냅샷으로 표현하고, 이전 시뮬레이터는 레거시 코드로 분리.
 
-매칭 흐름은 `REST 참가 → WebSocket 연결 → Ready 수신 → Play 로드 → ready ACK → Starting → 5초 countdown → Started snapshot`으로 명시. 연결 성공만으로 게임 준비를 판단하지 않고 서버와 클라이언트의 준비 상태를 단계별 동기화.
-
-<br/>
-
-### 7. 코드 밖의 계약 관리
-
-REST와 WebSocket 메시지는 [OpenAPI](CrawlStars/Docs/References/API/openapi.yaml), [AsyncAPI](CrawlStars/Docs/References/API/asyncapi.yaml)로 추적. 서버 공용 수치는 `game-config.json`으로 분리하고 Unity 빌드 전처리에서 최신 서버 설정 다운로드와 JSON 검증 수행.
-
-런타임 서버 주소는 Git에서 제외된 `network_config.json`으로 분리. URL 기반 `StreamingAssets` 환경을 위해 `UnityWebRequest` 사용. 게임 설정 로드 후 캐릭터·모드 Addressables 병렬 초기화와 횟수 제한 재시도 적용.
+반복 생성되는 맵 타일, 플레이어와 투사체는 오브젝트 풀로 관리하고 Sprite 조회 결과도 캐싱. 네트워크 메시지는 공통 `SocketMessageDto`로 한 번만 역직렬화하고, `Vector2Dto`를 값 타입으로 변경해 반복 수신 과정의 할당 감소.
 
 <br/>
 
-### 8. 리뷰에서 발견한 경계 조건 반영
+### 5. 정상 흐름보다 경계 조건을 테스트
 
-PR 리뷰를 기능 확인보다 상태 전이 검증에 활용. 동시 사망 시 Draw, 매칭 취소 후 입력 재활성화, 플랫폼별 StreamingAssets 경로, 초기화 경쟁, 일반 공격과 스킬의 쿨다운 분리 등 정상 흐름 밖의 조건을 후속 구현에 반영.
+Unity Test Framework와 NUnit을 사용해 순수 로직과 Unity 오브젝트 의존 테스트를 분리. 정상 동작뿐 아니라 누락된 스냅샷, 잘못된 설정값, 중복 호출과 맵 경계처럼 상태가 어긋날 수 있는 조건을 회귀 테스트로 보존.
 
-동작을 먼저 증명한 뒤 책임을 분리하고, 감각보다 측정값으로 병목을 좁히며, 코드와 명세의 불일치는 추측하지 않고 통합 과제로 기록하는 방식 유지.
+- `GamePhysics`: 맵 경계, 벽·물 충돌, 축별 미끄러짐과 잘못된 맵 데이터
+- `ProjectileManager`: 생성·갱신·파괴와 스냅샷에서 사라진 투사체 회수
+- `InputAckTracker`: 단조 증가 tick, ACK 지연, 중간 tick 정리와 타임아웃
+- `CooldownController`, `MapHelper`: 충전·회복 경계값과 좌표·타일 판정
+- `ObjectPooling`, `SpriteCacheHelper`, `Cache`: 재사용, 중복 회수와 씬 전환 후 캐시 초기화
 
-<br/>
-
-### 9. 상태와 경계값을 검증하는 EditMode 테스트
-
-Unity Test Framework와 NUnit 기반 단위 테스트 구성. 순수 로직과 Unity 오브젝트 의존 로직을 분리해 빠른 EditMode 검증에 집중.
-
-- `CooldownController`: 충전 소모, 경계 시간 회복, 큰 delta time, 잘못된 설정값 보정
-- `MapHelper`: 좌표 왕복 변환, 타일 크기 변경, 벽·물·부시·맵 외부 판정
-- `ObjectPooling`: 회수 후 재사용, 부모 변경, 중복 회수 방지, 사전 생성과 누락 프리팹 처리
-- `SpriteCacheHelper`, `Cache`: 리소스 재사용과 씬 전환 이후 캐시 무효화
-- `SingletonMonoBehaviour`, `ErrorHandler`, `MathUtil`: 중복 등록, 재시도 횟수, 예외 경로, 방향별 각도 계산
-
-`SetUp`과 `TearDown`에서 정적 캐시와 생성 오브젝트 초기화. `LogAssert`로 오류 경로까지 검증하고 런타임 설정값은 테스트별로 격리. 성공 흐름뿐 아니라 null, 음수, 맵 외부, 중복 호출 같은 경계 조건을 명시적인 회귀 사례로 보존.
-
-<br/>
-
-## 구현 기록
-
-- [로컬 프로토타이핑 - 브롤스타즈 모작 #1](https://sikpang.tistory.com/56)
-- [게임 기본 루프 개발 - 브롤스타즈 모작 #2](https://sikpang.tistory.com/57)
-- [서버 연동 - 브롤스타즈 모작 #3](https://sikpang.tistory.com/64)
+테스트 전후 정적 캐시와 생성 오브젝트를 초기화하고 `LogAssert`로 오류 경로까지 확인. PR 리뷰에서 발견한 동시 사망, 매칭 취소, 초기화 경쟁과 누락 스냅샷도 검증 범위에 포함.
 
 <br/>
 
@@ -211,14 +202,18 @@ Unity Test Framework와 NUnit 기반 단위 테스트 구성. 순수 로직과 U
 ```text
 CrawlStars/
 ├─ Assets/Scripts/
-│  ├─ Core/Controller       입력과 서버 snapshot을 잇는 클라이언트 루프
+│  ├─ Core/ClientGameLoop.cs 입력 전송, 스냅샷 적용과 예측 수명주기
+│  ├─ Core/Character        캐릭터 설정과 선택 상태
+│  ├─ Core/Inputs           이동·조준·공격 입력 수집
 │  ├─ Core/Player           플레이어 표현, 조준, 공격과 쿨다운
+│  ├─ Core/Prediction       로컬 이동 예측, 서버 보정과 충돌 처리
 │  ├─ Core/Projectile       투사체 생성·갱신·회수
 │  ├─ Core/Map              서버 맵 렌더링과 부시 시야
-│  ├─ Core/Simulator        로컬 테스트 봇과 A* 길찾기
+│  ├─ Core/Mode             게임 모드 설정과 선택 상태
+│  ├─ Core/Simulator_Legacy 서버 이전 전 로컬 프로토타입
 │  ├─ Network               REST, WebSocket, DTO와 메시지 분기
 │  ├─ Scene                 Additive 씬 전환과 씬별 입력 흐름
-│  ├─ Popup, UI             await 가능한 팝업과 전투 UI
+│  ├─ Popup, UI             await 가능한 팝업, 전투 UI와 ACK 측정
 │  └─ Utility               풀링, 캐시, 재시도와 공용 도구
 ├─ Assets/Editor/Tests       EditMode 단위 테스트
 ├─ Assets/StreamingAssets   런타임 네트워크·게임 설정
@@ -226,13 +221,3 @@ CrawlStars/
    ├─ References/API        OpenAPI, AsyncAPI 계약
    └─ FlowCharts            Core, UI, Matching 흐름도
 ```
-
-<br/>
-
-## 문서
-
-- [Core Flow](CrawlStars/Docs/FlowCharts/Core-Flow.excalidraw)
-- [UI Flow](CrawlStars/Docs/FlowCharts/UI-Flow.excalidraw)
-- [Matching Flow](CrawlStars/Docs/FlowCharts/Matching-Flow.excalidraw)
-- [REST API](CrawlStars/Docs/References/API/openapi.yaml)
-- [WebSocket API](CrawlStars/Docs/References/API/asyncapi.yaml)
