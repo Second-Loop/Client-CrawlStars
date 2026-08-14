@@ -18,9 +18,10 @@ namespace Core.Map {
             if (x < 0 || x >= mapData.width) return true;
             if (y < 0 || y >= mapData.height) return true;
 
-            int tileType = mapData.map[y][x];
-            return (Tile.TileType)tileType is Tile.TileType.Wall or Tile.TileType.Water;
+            return IsPathBlockedTileType(mapData.map[y][x]);
         }
+
+        public static bool IsPathBlockedTileType(int tileType) => (Tile.TileType)tileType is Tile.TileType.Wall or Tile.TileType.Water;
 
         public static bool IsInBush(Vector2Int pos) => IsInBush(pos.x, pos.y);
 

@@ -64,8 +64,7 @@ namespace Core.Prediction {
                 int columnCount = Mathf.Min(mapData.width, row.Length);
                 int lastCandidateX = Mathf.Min(maxCandidateX, columnCount - 1);
                 for (int x = minCandidateX; x <= lastCandidateX; x++) {
-                    var tileType = (Tile.TileType)row[x];
-                    if (tileType is not (Tile.TileType.Wall or Tile.TileType.Water)) continue;
+                    if (!MapHelper.IsPathBlockedTileType(row[x])) continue;
 
                     Vector2 tileCenter = mapStart + new Vector2(x, -y) * tileSize;
                     

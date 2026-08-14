@@ -125,7 +125,7 @@ namespace Core.Controller {
 
             if (moveDirection.sqrMagnitude > Mathf.Epsilon) {
                 listener.RotateTo(moveDirection);
-            } else if (localPredictor.HasAuthoritativeState) {
+            } else if (localPredictor.HasServerState) {
                 listener.MoveTo(localPredictor.Position);
             }
         }
@@ -142,7 +142,7 @@ namespace Core.Controller {
         private void CancelLocalPrediction() {
             localPredictor.Cancel();
             var listener = PlayerManager.Instance.MyListener;
-            if (listener != null && localPredictor.HasAuthoritativeState) {
+            if (listener != null && localPredictor.HasServerState) {
                 listener.MoveTo(localPredictor.Position);
             }
         }
