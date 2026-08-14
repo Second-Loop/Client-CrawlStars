@@ -20,7 +20,7 @@ namespace Core.Controller {
         public Action<Vector2, bool> OnDetectInput;
 
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
-        private readonly LocalMovementPredictor localMovementPredictor = new LocalMovementPredictor();
+        private readonly LocalMovementPredictor localPredictor = new LocalMovementPredictor();
 
         private float accumulator;
         private Vector2 previousMoveDirection;
@@ -58,7 +58,7 @@ namespace Core.Controller {
                 return;
             }
 
-            localMovementPredictor.Reset();
+            localPredictor.Reset();
             curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
@@ -87,7 +87,7 @@ namespace Core.Controller {
             SetActive(false);
             accumulator = 0;
             previousMoveDirection = Vector2.zero;
-            localMovementPredictor.Reset();
+            localPredictor.Reset();
             isInitialized = false;
         }
 
@@ -121,12 +121,12 @@ namespace Core.Controller {
             if (!isActive || input == null || listener == null) return;
 
             Vector2 moveDirection = input.MoveDir.ToVector2();
-            if (!localMovementPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
+            if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
 
             if (moveDirection.sqrMagnitude > Mathf.Epsilon) {
                 listener.RotateTo(moveDirection);
-            } else if (localMovementPredictor.HasAuthoritativeState) {
-                listener.MoveTo(localMovementPredictor.Position);
+            } else if (localPredictor.HasAuthoritativeState) {
+                listener.MoveTo(localPredictor.Position);
             }
         }
 
@@ -134,16 +134,16 @@ namespace Core.Controller {
             var listener = PlayerManager.Instance.MyListener;
             if (listener == null) return;
 
-            if (localMovementPredictor.TryUpdate(Time.deltaTime, MapHelper.CachedMapData, out var position)) {
+            if (localPredictor.TryUpdate(Time.deltaTime, out var position)) {
                 listener.MoveTo(position);
             }
         }
 
         private void CancelLocalPrediction() {
-            localMovementPredictor.Cancel();
+            localPredictor.Cancel();
             var listener = PlayerManager.Instance.MyListener;
-            if (listener != null && localMovementPredictor.HasAuthoritativeState) {
-                listener.MoveTo(localMovementPredictor.Position);
+            if (listener != null && localPredictor.HasAuthoritativeState) {
+                listener.MoveTo(localPredictor.Position);
             }
         }
 
@@ -173,7 +173,7 @@ namespace Core.Controller {
             }
 
             ObserveLocalPlayerSnapshot(snapshot.Players);
-            PlayerManager.Instance.ApplySnapshot(snapshot.Players, localMovementPredictor.IsActive);
+            PlayerManager.Instance.ApplySnapshot(snapshot.Players, localPredictor.IsActive);
             BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
 
@@ -186,7 +186,7 @@ namespace Core.Controller {
             foreach (var player in players) {
                 if (player == null || player.Id != PlayerManager.Instance.MyId) continue;
 
-                localMovementPredictor.ObserveSnapshot(player);
+                localPredictor.ObserveSnapshot(player);
                 return;
             }
         }

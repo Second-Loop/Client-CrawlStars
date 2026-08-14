@@ -6,11 +6,10 @@ namespace Core.Prediction {
     public class LocalMovementPredictor {
         private const float PredictionDuration = 0.12f;
 
-        private Vector2 lastSubmittedDirection;
-        private Vector2 predictionDirection;
-        private Vector2 authoritativePosition;
+        private Vector2 lastSubmittedDir;
+        private Vector2 predictionDir;
+        private Vector2 authoritativePos;
         private float authoritativeSpeed;
-        private float authoritativeRadius;
         private float elapsed;
         private long pendingClientTick;
 
@@ -20,8 +19,8 @@ namespace Core.Prediction {
 
         public bool HandleInput(long clientTick, Vector2 moveDirection, Vector2 currentPosition) {
             moveDirection = Vector2.ClampMagnitude(moveDirection, 1f);
-            bool isChanged = (moveDirection - lastSubmittedDirection).sqrMagnitude > Mathf.Epsilon;
-            lastSubmittedDirection = moveDirection;
+            bool isChanged = (moveDirection - lastSubmittedDir).sqrMagnitude > Mathf.Epsilon;
+            lastSubmittedDir = moveDirection;
             if (!isChanged) return false;
 
             if (moveDirection.sqrMagnitude <= Mathf.Epsilon) {
@@ -37,7 +36,7 @@ namespace Core.Prediction {
                 return true;
             }
 
-            predictionDirection = moveDirection;
+            predictionDir = moveDirection;
             pendingClientTick = clientTick;
             elapsed = 0f;
             IsActive = true;
@@ -49,11 +48,10 @@ namespace Core.Prediction {
 
             Vector2 nextAuthoritativePosition = player.Pos.ToVector2();
             if (IsActive) {
-                Position += nextAuthoritativePosition - authoritativePosition;
+                Position += nextAuthoritativePosition - authoritativePos;
             }
-            authoritativePosition = nextAuthoritativePosition;
+            authoritativePos = nextAuthoritativePosition;
             authoritativeSpeed = Mathf.Max(0f, player.Speed);
-            authoritativeRadius = Mathf.Max(0f, player.Radius);
             HasAuthoritativeState = true;
 
             if (!IsActive) {
@@ -66,7 +64,7 @@ namespace Core.Prediction {
             }
         }
 
-        public bool TryUpdate(float deltaTime, MapData mapData, out Vector2 position) {
+        public bool TryUpdate(float deltaTime, out Vector2 position) {
             position = Position;
             if (!IsActive) return false;
 
@@ -80,15 +78,15 @@ namespace Core.Prediction {
 
             float progress = elapsed / PredictionDuration;
             float speedRatio = progress * progress;
-            Vector2 movement = predictionDirection * (authoritativeSpeed * speedRatio * frameDelta);
-            Position = GamePhysics.Move(Position, movement, authoritativeRadius, mapData);
+            Vector2 movement = predictionDir * (authoritativeSpeed * speedRatio * frameDelta);
+            Position = GamePhysics.GetNextPosition(Position, movement);
             position = Position;
             return true;
         }
 
         public void Cancel() {
             if (HasAuthoritativeState) {
-                Position = authoritativePosition;
+                Position = authoritativePos;
             }
             IsActive = false;
             elapsed = 0f;
@@ -96,11 +94,10 @@ namespace Core.Prediction {
         }
 
         public void Reset() {
-            lastSubmittedDirection = Vector2.zero;
-            predictionDirection = Vector2.zero;
-            authoritativePosition = Vector2.zero;
+            lastSubmittedDir = Vector2.zero;
+            predictionDir = Vector2.zero;
+            authoritativePos = Vector2.zero;
             authoritativeSpeed = 0f;
-            authoritativeRadius = 0f;
             Position = Vector2.zero;
             IsActive = false;
             HasAuthoritativeState = false;
@@ -109,7 +106,7 @@ namespace Core.Prediction {
         }
 
         private void EndAtAuthoritativePosition() {
-            Position = authoritativePosition;
+            Position = authoritativePos;
             IsActive = false;
             elapsed = 0f;
             pendingClientTick = 0;

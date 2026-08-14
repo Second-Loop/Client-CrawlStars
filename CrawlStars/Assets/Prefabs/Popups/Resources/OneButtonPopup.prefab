@@ -92,6 +92,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: OneButtonPopup
       objectReference: {fileID: 0}
+    - target: {fileID: 8199443858346954024, guid: d9f0d66a6b2f7124fb9cc0889c0e6ed9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

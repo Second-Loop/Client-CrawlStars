@@ -3,23 +3,23 @@ using UnityEngine;
 
 namespace Core.Prediction {
     public static class GamePhysics {
-        public static Vector2 Move(Vector2 position, Vector2 movement, float radius, MapData mapData) {
-            Vector2 result = position;
+        public static Vector2 GetNextPosition(Vector2 curPos, Vector2 movDir) {
+            Vector2 result = curPos;
 
-            Vector2 nextX = new Vector2(position.x + movement.x, position.y);
-            if (!CollidesWithMap(nextX, radius, mapData)) {
+            Vector2 nextX = new Vector2(curPos.x + movDir.x, curPos.y);
+            if (!CheckCollision(nextX, GameConfig.PlayerRadius)) {
                 result.x = nextX.x;
             }
 
-            Vector2 nextY = new Vector2(result.x, position.y + movement.y);
-            if (!CollidesWithMap(nextY, radius, mapData)) {
+            Vector2 nextY = new Vector2(result.x, curPos.y + movDir.y);
+            if (!CheckCollision(nextY, GameConfig.PlayerRadius)) {
                 result.y = nextY.y;
             }
-
             return result;
         }
 
-        private static bool CollidesWithMap(Vector2 position, float radius, MapData mapData) {
+        private static bool CheckCollision(Vector2 position, float radius) {
+            var mapData = MapHelper.CachedMapData;
             if (mapData?.map == null || mapData.width <= 0 || mapData.height <= 0) return false;
 
             float tileSize = GameConfig.TileSize;
