@@ -4,7 +4,7 @@ namespace Core.Map {
     public static class MapHelper {
         public static MapData CachedMapData { get; set; }
 
-        private static float HalfTileSize => GameConfig.TileSize * 0.5f;
+        public static float HalfTileSize => GameConfig.TileSize * 0.5f;
 
         public static Vector2 GetMapStartPos(MapData mapData) => new Vector2(
             -HalfTileSize * (mapData.width - 1),
