@@ -1,5 +1,8 @@
-using Core.Character;
+﻿using Core.Character;
 using Network;
+using Cysharp.Threading.Tasks;
+using System;
+using System.Threading;
 using UnityEngine;
 using Utility;
 
@@ -9,8 +12,13 @@ namespace Core.Player {
         [SerializeField] private SpriteRenderer body;
         [SerializeField] private StatusBar hpBar;
         [SerializeField] private SpriteRenderer aura;
+        [SerializeField] private SpriteRenderer meleeAttackEffect;
+        [SerializeField] private float meleeEffectDuration = 0.15f;
 
         private bool isStatusInitialized;
+        private CharacterManager.CharacterType characterType;
+        private CancellationTokenSource meleeEffectCancellation;
+        private PlayerSpriteAnimator spriteAnimator;
 
         private static readonly Color32 MyAuraColor = new Color32(23, 212, 29, 150);
         private static readonly Color32 MySideAuraColor = new Color32(0, 198, 255, 150);
@@ -22,10 +30,17 @@ namespace Core.Player {
         public void Initialize(ReadyPlayerDto playerData, bool isMe) {
             isStatusInitialized = false;
 
-            var info = CharacterManager.Instance.GetCharacterInfo((CharacterManager.CharacterType)playerData.CharacterType);
+            characterType = (CharacterManager.CharacterType)playerData.CharacterType;
+            var info = CharacterManager.Instance.GetCharacterInfo(characterType);
             if (info != null) {
                 body.sprite = SpriteCacheHelper.Get(info.iconSpriteName);
             }
+
+            spriteAnimator ??= GetComponent<PlayerSpriteAnimator>();
+            spriteAnimator ??= gameObject.AddComponent<PlayerSpriteAnimator>();
+            spriteAnimator.Initialize(body, characterType.ToString());
+
+            CancelMeleeAttackEffect();
 
             bool isMySide = playerData.Team == PlayerManager.Instance.MyTeam;
 
@@ -50,10 +65,25 @@ namespace Core.Player {
         public void MoveTo(Vector3 position) {
             transform.position = position + Vector3.back;
         }
+
+        public void SetMoving(bool isMoving) {
+            spriteAnimator?.SetMoving(isMoving);
+        }
         
         public void RotateTo(Vector2 direction) {
             if (direction == Vector2.zero) return;
+            if (spriteAnimator != null && spriteAnimator.IsAttacking) return;
 
+            ApplyRotation(direction);
+        }
+
+        public void RotateToAttack(Vector2 direction) {
+            if (direction == Vector2.zero) return;
+
+            ApplyRotation(direction);
+        }
+
+        private void ApplyRotation(Vector2 direction) {
             float angle = MathUtil.GetAngle(direction);
             bodyRoot.transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
@@ -62,7 +92,46 @@ namespace Core.Player {
         public void Attack(Vector2 direction) {
             if (direction == Vector2.zero) return;
 
-            // attack to dir
+            spriteAnimator?.PlayAttack();
+            if (characterType == CharacterManager.CharacterType.Lily) {
+                PlayMeleeAttackEffect();
+            }
+        }
+
+        private void PlayMeleeAttackEffect() {
+            if (meleeAttackEffect == null) return;
+
+            CancelMeleeAttackEffect();
+            meleeAttackEffect.gameObject.SetActive(true);
+            var destroyToken = gameObject.GetCancellationTokenOnDestroy();
+            meleeEffectCancellation = CancellationTokenSource.CreateLinkedTokenSource(destroyToken);
+            HideMeleeAttackEffectAsync(meleeEffectCancellation.Token).Forget();
+        }
+
+        private async UniTask HideMeleeAttackEffectAsync(CancellationToken cancellationToken) {
+            var isCanceled = await UniTask.Delay(
+                TimeSpan.FromSeconds(meleeEffectDuration),
+                cancellationToken: cancellationToken
+            ).SuppressCancellationThrow();
+            if (isCanceled) return;
+
+            meleeAttackEffect.gameObject.SetActive(false);
+            meleeEffectCancellation.Dispose();
+            meleeEffectCancellation = null;
+        }
+
+        private void CancelMeleeAttackEffect() {
+            meleeEffectCancellation?.Cancel();
+            meleeEffectCancellation?.Dispose();
+            meleeEffectCancellation = null;
+
+            if (meleeAttackEffect != null) {
+                meleeAttackEffect.gameObject.SetActive(false);
+            }
+        }
+
+        private void OnDisable() {
+            CancelMeleeAttackEffect();
         }
 
         public void BeingHit(float hp) {

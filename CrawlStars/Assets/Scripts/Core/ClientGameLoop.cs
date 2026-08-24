@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Core.Inputs;
 using Core.Map;
@@ -125,6 +125,7 @@ namespace Core {
             if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
 
             bool hasDirection = moveDirection.sqrMagnitude > Mathf.Epsilon;
+            listener.SetMoving(hasDirection);
             if (hasDirection) {
                 // 캐릭터 바로 회전
                 listener.RotateTo(moveDirection);
