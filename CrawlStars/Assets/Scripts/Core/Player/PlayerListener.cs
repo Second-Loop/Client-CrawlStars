@@ -12,13 +12,13 @@ namespace Core.Player {
         [SerializeField] private SpriteRenderer body;
         [SerializeField] private StatusBar hpBar;
         [SerializeField] private SpriteRenderer aura;
+        [SerializeField] private PlayerSpriteAnimator spriteAnimator;
         [SerializeField] private SpriteRenderer meleeAttackEffect;
         [SerializeField] private float meleeEffectDuration = 0.15f;
 
         private bool isStatusInitialized;
         private CharacterManager.CharacterType characterType;
         private CancellationTokenSource meleeEffectCancellation;
-        private PlayerSpriteAnimator spriteAnimator;
 
         private static readonly Color32 MyAuraColor = new Color32(23, 212, 29, 150);
         private static readonly Color32 MySideAuraColor = new Color32(0, 198, 255, 150);
@@ -36,8 +36,6 @@ namespace Core.Player {
                 body.sprite = SpriteCacheHelper.Get(info.iconSpriteName);
             }
 
-            spriteAnimator ??= GetComponent<PlayerSpriteAnimator>();
-            spriteAnimator ??= gameObject.AddComponent<PlayerSpriteAnimator>();
             spriteAnimator.Initialize(body, characterType.ToString());
 
             CancelMeleeAttackEffect();
@@ -67,12 +65,12 @@ namespace Core.Player {
         }
 
         public void SetMoving(bool isMoving) {
-            spriteAnimator?.SetMoving(isMoving);
+            spriteAnimator.SetMoving(isMoving);
         }
         
         public void RotateTo(Vector2 direction) {
             if (direction == Vector2.zero) return;
-            if (spriteAnimator != null && spriteAnimator.IsAttacking) return;
+            if (spriteAnimator.IsAttacking) return;
 
             ApplyRotation(direction);
         }
@@ -92,15 +90,13 @@ namespace Core.Player {
         public void Attack(Vector2 direction) {
             if (direction == Vector2.zero) return;
 
-            spriteAnimator?.PlayAttack();
+            spriteAnimator.PlayAttack();
             if (characterType == CharacterManager.CharacterType.Lily) {
                 PlayMeleeAttackEffect();
             }
         }
 
         private void PlayMeleeAttackEffect() {
-            if (meleeAttackEffect == null) return;
-
             CancelMeleeAttackEffect();
             meleeAttackEffect.gameObject.SetActive(true);
             var destroyToken = gameObject.GetCancellationTokenOnDestroy();
@@ -124,10 +120,7 @@ namespace Core.Player {
             meleeEffectCancellation?.Cancel();
             meleeEffectCancellation?.Dispose();
             meleeEffectCancellation = null;
-
-            if (meleeAttackEffect != null) {
-                meleeAttackEffect.gameObject.SetActive(false);
-            }
+            meleeAttackEffect.gameObject.SetActive(false);
         }
 
         private void OnDisable() {
