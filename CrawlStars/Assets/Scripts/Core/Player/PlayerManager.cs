@@ -67,7 +67,7 @@ namespace Core.Player {
                 }
 
                 if (player.PressedAttack) {
-                    listener.RotateTo(player.AttackDir.ToVector2());
+                    listener.RotateToAttack(player.AttackDir.ToVector2());
                     listener.Attack(player.AttackDir.ToVector2());
                 }
                 

@@ -18,6 +18,8 @@ namespace Core.Player {
         private float frameTimer;
         private float activeAttackFramesPerSecond;
 
+        public bool IsAttacking => isAttacking;
+
         public void Initialize(SpriteRenderer targetBody, string characterName) {
             body = targetBody;
             idleSprite = targetBody != null ? targetBody.sprite : null;

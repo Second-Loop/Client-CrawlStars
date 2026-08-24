@@ -63,7 +63,18 @@ namespace Core.Player {
         
         public void RotateTo(Vector2 direction) {
             if (direction == Vector2.zero) return;
+            if (spriteAnimator != null && spriteAnimator.IsAttacking) return;
 
+            ApplyRotation(direction);
+        }
+
+        public void RotateToAttack(Vector2 direction) {
+            if (direction == Vector2.zero) return;
+
+            ApplyRotation(direction);
+        }
+
+        private void ApplyRotation(Vector2 direction) {
             float angle = MathUtil.GetAngle(direction);
             bodyRoot.transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
