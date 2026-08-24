@@ -74,10 +74,11 @@
 
 <br/>
 
-## 빌드 (Beta ver.)
+## 빌드 링크 (Beta ver.)
 
-- [[MacOS](https://drive.google.com/file/d/1YBGvgmAp3SAW3rF5badNIrJNWoCoKSxU/view?usp=sharing)]
 - [[Windows](https://drive.google.com/file/d/1l8gNoBy5dgZDtRzYdOrcR8II3TrcqXP-/view?usp=sharing)]
+- [[MacOS](https://drive.google.com/file/d/1YBGvgmAp3SAW3rF5badNIrJNWoCoKSxU/view?usp=sharing)]
+  - Gatekeeper 보안 기능으로 앱 실행이 막힐 때 `xattr -dr com.apple.quarantine "/path/to/YourGame.app"`
 
 <br/>
 
