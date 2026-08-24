@@ -35,22 +35,24 @@ paths:
       summary: 매칭에 참가하고 WebSocket 경로 받기
       description: |
         요청한 gameMode와 같은 여유 waiting room을 찾거나 새 room을 만들고 player를 발급합니다.
-        body가 없거나, 빈 object이거나, gameMode가 빈 문자열이면 기본값 duel_1v1을 선택합니다.
-        새 client는 optional `characterType`에 stable ID 0=Shelly, 1=Colt, 2=Lily 중 하나를 명시합니다. SL-82에서는 legacy client의 field 생략만 Shelly 0으로 보정하고 structured warning을 한 번 기록합니다. explicit null, non-integer, string/bool/object/array, 지원하지 않는 정수는 400 `invalid_character_type`입니다. SL-98에서 field를 required로 전환합니다.
+        Request body와 `characterType`은 required입니다. `gameMode`가 생략되거나 빈 문자열이면 기본값 duel_1v1을 선택합니다.
+        `characterType`은 stable ID 0=Shelly, 1=Colt, 2=Lily 중 하나여야 합니다. field 누락, explicit null, non-integer, string/bool/object/array, 지원하지 않는 정수는 400 `invalid_character_type`입니다.
         Raw request body가 1024 bytes를 초과하면 400 `invalid_request`로 거부합니다.
 
         첫 번째 참가자는 `status: waiting` 상태를 받습니다. 이 상태에서는 WebSocket input은 받을 수 있지만 gameplay snapshot은 broadcast하지 않습니다.
         첫 human matchmaking join부터 10초인 room-owned one-shot deadline을 시작합니다. 후속 human join과 partial manual bot 추가는 deadline을 reset하지 않습니다.
         deadline을 먼저 획득하면 selected mode의 남은 participant slot을 bot으로 충원하고 room을 matched로 잠급니다. 같은 순간 late join은 다른 waiting room을 찾거나 만들며, active-room cap이면 room_cap_reached 409를 반환합니다.
         선택 mode의 participant capacity가 차도 REST 응답 shape는 유지하며 room은 `status: waiting`으로 남습니다. Room participant에는 human과 server-owned bot이 함께 들어갈 수 있습니다.
+        Match가 완성된 시점부터 모든 human WebSocket session이 attach될 때까지 strict 30초 room-owned deadline을 적용합니다. `now >= deadline`이면 기존 credential attach를 거부하고 pre-start room 전체를 취소해 player/session identity를 모두 폐기합니다. Client는 `POST /matchmaking/join`을 새로 호출해 새 room/player/session identity를 받아야 하며 `Idempotency-Key` replay는 제공하지 않습니다.
         연결된 human WebSocket session이 attach quorum을 만족하면 각 human이 `Type: Ready` 이벤트로 bot을 포함한 full participant의 spawn 정보를 받습니다. human session만 Ready ACK를 보내면 server가 countdown 시작 신호를 1번 보냅니다. Bot은 token, WebSocket, Ready ACK가 없습니다. Client는 fake timer를 표시하고, server는 5초를 내부에서 센 뒤 room을 `started`로 바꾸고 room config의 tick rate로 snapshot broadcast를 시작합니다.
         1명만으로 디버그하려면 `POST /rooms/{roomID}/start`를 호출합니다.
       operationId: joinMatchmaking
       requestBody:
+        required: true
         description: |
-          선택할 game mode입니다. Request body 자체는 optional입니다.
-          body 없음, 빈 object, gameMode 빈 문자열은 모두 duel_1v1로 처리합니다.
-          새 client는 canonical game mode ID와 optional `characterType` stable ID 0/1/2를 보냅니다. characterType 생략은 SL-82 legacy compatibility로만 Shelly 0이 되며 SL-98에서 required가 됩니다.
+          선택할 game mode와 character type입니다. Request body와 `characterType`은 required입니다.
+          gameMode 생략과 빈 문자열은 duel_1v1로 처리합니다.
+          Client는 required `characterType`에 stable ID 0/1/2를 보냅니다. field 누락은 `invalid_character_type`입니다.
           Raw request body의 최대 크기는 1024 bytes이며 초과하면 `invalid_request`입니다.
         content:
           application/json:
@@ -71,10 +73,6 @@ paths:
                 value:
                   gameMode: team
                   characterType: 2
-              legacyMissingCharacterType:
-                summary: legacy field 생략은 SL-82에서만 Shelly로 보정
-                value:
-                  gameMode: duel_1v1
       responses:
         "201":
           description: 선택된 gameMode, 발급된 room, player, player session token, WebSocket 경로
@@ -115,7 +113,7 @@ paths:
                 sessionToken: example_redacted_session_token_000000000000
                 webSocketPath: "/rooms/room_AbCdEfGhIjKlMnOpQrStUv/players/player_VuTsRqPoNmLkJiHgFeDcBa?token=example_redacted_session_token_000000000000"
         "400":
-          description: 요청 JSON이 잘못됐거나 raw body가 1024 bytes를 초과했거나 지원하지 않는 gameMode/characterType입니다.
+          description: 요청 JSON이 잘못됐거나 raw body가 1024 bytes를 초과했거나 characterType이 누락됐거나 지원하지 않는 gameMode/characterType입니다.
           content:
             application/json:
               schema:
@@ -134,7 +132,7 @@ paths:
                       code: invalid_request
                       message: invalid request
                 invalidCharacterType:
-                  summary: 지원하지 않거나 잘못된 character type
+                  summary: 누락됐거나 지원하지 않거나 잘못된 character type
                   value:
                     error:
                       code: invalid_character_type
@@ -467,10 +465,11 @@ components:
             $ref: "#/components/schemas/Room"
     MatchmakingJoinRequest:
       type: object
+      required: [characterType]
       description: |
         Matchmaking mode 선택 요청입니다. Canonical non-empty 값은 duel_1v1, solo, team입니다.
-        Field 생략과 빈 문자열은 기존 client 호환을 위해 server에서 기본 duel_1v1로 처리합니다.
-        characterType은 SL-82에서 optional migration field입니다. 새 client는 0=Shelly, 1=Colt, 2=Lily를 명시하고, legacy 생략만 Shelly 0으로 보정됩니다. SL-98에서 required로 전환합니다.
+        gameMode 생략과 빈 문자열은 server에서 기본 duel_1v1로 처리합니다.
+        characterType은 required이며 0=Shelly, 1=Colt, 2=Lily 중 하나여야 합니다. 누락값을 보정하지 않습니다.
       properties:
         gameMode:
           type: string
@@ -520,7 +519,7 @@ components:
     Room:
       type: object
       required: [id, gameMode, status, players, maxPlayers, map, latestSnapshot]
-      description: room 상태 확인 응답입니다. `gameMode`는 room 생성 시 선택되어 lifecycle 동안 바뀌지 않습니다. `map`은 클라이언트가 같은 tile grid를 그릴 때 사용하며 row는 Base64 문자열이 아니라 JSON number array로 직렬화됩니다. 기본 source는 server binary가 embed한 `server-config/game-config.json`의 map이고, config 로드나 검증에 실패하면 `StaticGameConfig()`의 5x5 map으로 fallback합니다.
+      description: room 상태 확인 응답입니다. `gameMode`는 room 생성 시 선택되어 lifecycle 동안 바뀌지 않습니다. `map`은 클라이언트가 같은 tile grid를 그릴 때 사용하며 row는 Base64 문자열이 아니라 JSON number array로 직렬화됩니다. 기본 source는 server binary가 embed한 `server-config/game-config.json`의 map입니다. Production은 config 로드나 검증에 실패하면 listener를 열기 전에 startup을 실패시키며, `StaticGameConfig()`의 5x5 map은 명시적 test/dev helper에서만 사용합니다.
       properties:
         id:
           $ref: "#/components/schemas/OpaqueRoomID"
@@ -599,10 +598,13 @@ components:
       required: [width, height, index, maxPlayers, tileSize, map]
       description: >-
         서버 simulation이 사용하는 tile map입니다. 기본 runtime map은 server binary가 embed한
-        `server-config/game-config.json`에서 로드하고, 실패하면 `StaticGameConfig()`의 5x5 map으로
-        fallback합니다. `internal/simulation/fixtures/default-map.json`은 테스트와 legacy 호환 확인용
-        fixture입니다. tile 값은 0=ground, 1=wall, 2=spawnPoint, 3=bush, 4=water이며 map row는 JSON
-        number array입니다. Player는 wall/water, projectile은 wall에 충돌하고 map boundary는 둘 다 막습니다.
+        `server-config/game-config.json`에서 로드합니다. Production은 decode, version, catalog, map 또는
+        max-radius spawn 검증 실패 시 listener를 열기 전에 startup을 실패시키며 5x5 map으로 fallback하지
+        않습니다. `StaticGameConfig()`과 `internal/simulation/fixtures/default-map.json`은 test/dev와 legacy
+        호환 확인용입니다. tile 값은 0=ground, 1=wall, 2=spawnPoint, 3=bush, 4=water이며 map row는 JSON
+        number array입니다. Player는 wall/water와 다른 live player, projectile은 wall에 충돌하고 map boundary는
+        둘 다 막습니다. Player-player 충돌 pair는 축별 이동을 모두 취소하고 기존 overlap은 separation을
+        엄격히 늘리는 이동만 허용합니다.
       properties:
         width:
           type: integer
