@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using CameraControl;
 using Network;
 using UnityEngine;
@@ -60,8 +60,10 @@ namespace Core.Player {
 
                 bool shouldPreserveMovement = preserveLocalMovement && player.Id == MyId;
                 if (!shouldPreserveMovement) {
+                    var moveDirection = player.MoveDir.ToVector2();
                     listener.MoveTo(player.Pos.ToVector2());
-                    listener.RotateTo(player.MoveDir.ToVector2());
+                    listener.RotateTo(moveDirection);
+                    listener.SetMoving(moveDirection.sqrMagnitude > Mathf.Epsilon);
                 }
 
                 if (player.PressedAttack) {

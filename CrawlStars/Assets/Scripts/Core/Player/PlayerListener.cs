@@ -1,4 +1,4 @@
-using Core.Character;
+﻿using Core.Character;
 using Network;
 using UnityEngine;
 using Utility;
@@ -11,6 +11,7 @@ namespace Core.Player {
         [SerializeField] private SpriteRenderer aura;
 
         private bool isStatusInitialized;
+        private PlayerSpriteAnimator spriteAnimator;
 
         private static readonly Color32 MyAuraColor = new Color32(23, 212, 29, 150);
         private static readonly Color32 MySideAuraColor = new Color32(0, 198, 255, 150);
@@ -22,10 +23,15 @@ namespace Core.Player {
         public void Initialize(ReadyPlayerDto playerData, bool isMe) {
             isStatusInitialized = false;
 
-            var info = CharacterManager.Instance.GetCharacterInfo((CharacterManager.CharacterType)playerData.CharacterType);
+            var characterType = (CharacterManager.CharacterType)playerData.CharacterType;
+            var info = CharacterManager.Instance.GetCharacterInfo(characterType);
             if (info != null) {
                 body.sprite = SpriteCacheHelper.Get(info.iconSpriteName);
             }
+
+            spriteAnimator ??= GetComponent<PlayerSpriteAnimator>();
+            spriteAnimator ??= gameObject.AddComponent<PlayerSpriteAnimator>();
+            spriteAnimator.Initialize(body, characterType.ToString());
 
             bool isMySide = playerData.Team == PlayerManager.Instance.MyTeam;
 
@@ -50,6 +56,10 @@ namespace Core.Player {
         public void MoveTo(Vector3 position) {
             transform.position = position + Vector3.back;
         }
+
+        public void SetMoving(bool isMoving) {
+            spriteAnimator?.SetMoving(isMoving);
+        }
         
         public void RotateTo(Vector2 direction) {
             if (direction == Vector2.zero) return;
@@ -62,7 +72,7 @@ namespace Core.Player {
         public void Attack(Vector2 direction) {
             if (direction == Vector2.zero) return;
 
-            // attack to dir
+            spriteAnimator?.PlayAttack();
         }
 
         public void BeingHit(float hp) {
