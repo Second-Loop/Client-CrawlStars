@@ -16,12 +16,14 @@ namespace Core.Player {
         private bool isAttacking;
         private int frameIndex;
         private float frameTimer;
+        private float activeAttackFramesPerSecond;
 
         public void Initialize(SpriteRenderer targetBody, string characterName) {
             body = targetBody;
             idleSprite = targetBody != null ? targetBody.sprite : null;
             walkFrames = LoadFrames($"Animations/{characterName}/Walk");
             attackFrames = LoadFrames($"Animations/{characterName}/Attack");
+            activeAttackFramesPerSecond = characterName == "Colt" ? 5f : attackFramesPerSecond;
             isMoving = false;
             isAttacking = false;
             frameIndex = 0;
@@ -64,7 +66,7 @@ namespace Core.Player {
         }
 
         private void AdvanceAttack() {
-            float frameDuration = 1f / attackFramesPerSecond;
+            float frameDuration = 1f / activeAttackFramesPerSecond;
             frameTimer += Time.deltaTime;
 
             while (frameTimer >= frameDuration) {
