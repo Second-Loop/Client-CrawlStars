@@ -22,6 +22,8 @@ namespace Scene {
         [SerializeField] private Image selectedModeImage;
         [SerializeField] private TextMeshProUGUI selectedModeText;
         
+        [SerializeField] private TextMeshProUGUI versionText;
+        
         protected override void Start() {
             base.Start();
             playButton.onClick.AddListener(OnClickPlayButton);
@@ -31,6 +33,8 @@ namespace Scene {
 
             SetCurModeInfo();
             SetCurCharacterInfo();
+
+            versionText.text = Application.version;
         }
 
         private void OnClickPlayButton() {

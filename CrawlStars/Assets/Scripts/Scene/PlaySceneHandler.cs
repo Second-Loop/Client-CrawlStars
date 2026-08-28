@@ -3,6 +3,7 @@ using Core.Player;
 using Managing;
 using Network;
 using Popup;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +13,7 @@ namespace Scene {
         [SerializeField] private AimRenderer aimRenderer;
         [SerializeField] private CooldownView cooldownView;
         [SerializeField] private GameObject waitingCurtain;
+        [SerializeField] private TextMeshProUGUI infoText;
 
         protected override void Start() {
             base.Start();
@@ -19,7 +21,7 @@ namespace Scene {
 
             NetworkManager.Instance.InputSubmitted += benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
-            NetworkManager.Instance.SnapshotReceived += HideWaitingCurtain;
+            NetworkManager.Instance.SnapshotReceived += HandleUIBeforeStart;
 
             cooldownView.Initialize(GameManager.Instance.AttackCooldownSource);
             aimRenderer.Initialize();
@@ -28,12 +30,21 @@ namespace Scene {
             cooldownView.gameObject.SetActive(false);
         }
 
+        protected override void Update() {
+            if (Input.GetKeyDown(KeyCode.B)) {
+                bool isActive = !benchMarker.gameObject.activeSelf;
+                benchMarker.gameObject.SetActive(isActive);
+                infoText.text = $"Press 'B' to {(isActive ? "hide" : "show")} benchmarker";
+            }
+            base.Update();
+        }
+
         private void OnDestroy() {
             GameManager.Instance.UnregisterOnDetectInput(aimRenderer.OnPressKey);
 
             NetworkManager.Instance.InputSubmitted -= benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
-            NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
+            NetworkManager.Instance.SnapshotReceived -= HandleUIBeforeStart;
 
             cooldownView.Clear();
         }
@@ -52,12 +63,16 @@ namespace Scene {
             isClickedLeave = false;
         }
 
-        private void HideWaitingCurtain(SnapshotDto snapshot) {
-            if (snapshot.Status != "starting") return;
+        private void HandleUIBeforeStart(SnapshotDto snapshot) {
+            if (snapshot.Status == "starting") {
+                waitingCurtain.SetActive(false);
+                return;
+            }
 
-            waitingCurtain.SetActive(false);
+            if (snapshot.Status != "started") return;
+
             cooldownView.gameObject.SetActive(true);
-            NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
+            NetworkManager.Instance.SnapshotReceived -= HandleUIBeforeStart;
         }
     }
 }
