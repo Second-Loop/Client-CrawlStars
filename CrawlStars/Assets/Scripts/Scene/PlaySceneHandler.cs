@@ -21,7 +21,7 @@ namespace Scene {
 
             NetworkManager.Instance.InputSubmitted += benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
-            NetworkManager.Instance.SnapshotReceived += HideWaitingCurtain;
+            NetworkManager.Instance.SnapshotReceived += HandleUIBeforeStart;
 
             cooldownView.Initialize(GameManager.Instance.AttackCooldownSource);
             aimRenderer.Initialize();
@@ -44,7 +44,7 @@ namespace Scene {
 
             NetworkManager.Instance.InputSubmitted -= benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
-            NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
+            NetworkManager.Instance.SnapshotReceived -= HandleUIBeforeStart;
 
             cooldownView.Clear();
         }
@@ -63,12 +63,16 @@ namespace Scene {
             isClickedLeave = false;
         }
 
-        private void HideWaitingCurtain(SnapshotDto snapshot) {
-            if (snapshot.Status != "starting") return;
+        private void HandleUIBeforeStart(SnapshotDto snapshot) {
+            if (snapshot.Status == "starting") {
+                waitingCurtain.SetActive(false);
+                return;
+            }
 
-            waitingCurtain.SetActive(false);
+            if (snapshot.Status != "started") return;
+
             cooldownView.gameObject.SetActive(true);
-            NetworkManager.Instance.SnapshotReceived -= HideWaitingCurtain;
+            NetworkManager.Instance.SnapshotReceived -= HandleUIBeforeStart;
         }
     }
 }
