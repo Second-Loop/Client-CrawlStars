@@ -85,11 +85,15 @@ namespace Core.Prediction {
         }
 
         public bool TryUpdatePosition(out Vector2 position) {
+            return TryUpdatePosition(Time.deltaTime, out position);
+        }
+
+        public bool TryUpdatePosition(float deltaTime, out Vector2 position) {
             position = CurPosition;
             if (!IsActive) return false;
 
-            float deltaTime = Time.deltaTime;
-            elapsed += deltaTime;
+            float frameDelta = Mathf.Max(0f, deltaTime);
+            elapsed += frameDelta;
 
             // PredictionDuration 이후에는 예측 적용x
             if (elapsed >= PredictionDuration) {
@@ -98,10 +102,7 @@ namespace Core.Prediction {
                 return true;
             }
 
-            // 점점 빠르게 이동
-            float progress = elapsed / PredictionDuration;
-            float speedRatio = progress * progress;
-            Vector2 movement = predictionDir * (serverSpeed * speedRatio * deltaTime);
+            Vector2 movement = predictionDir * (serverSpeed * frameDelta);
 
             CurPosition = GamePhysics.GetNextPosition(CurPosition, movement);
             position = CurPosition;
