@@ -106,6 +106,7 @@ namespace Network {
         [JsonProperty("MoveDir")] public Vector2Dto MoveDir { get; set; }
         [JsonProperty("AttackDir")] public Vector2Dto AttackDir { get; set; }
         [JsonProperty("PressedAttack")] public bool PressedAttack { get; set; }
+        [JsonProperty("PressedSkill")] public bool PressedSkill { get; set; }
     }
 
     public struct Vector2Dto {

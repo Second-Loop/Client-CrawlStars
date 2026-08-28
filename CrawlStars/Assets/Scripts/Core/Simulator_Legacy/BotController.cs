@@ -53,8 +53,7 @@ namespace Core.Simulator {
                 }
             }
 
-            // 추후 usedSkill 보내기
-            await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection);
+            await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection, usedSkill);
         }
 
         private (Vector2 moveDirection, Vector2 attackDirection) Update(AttackManager attackManager) {

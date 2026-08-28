@@ -95,7 +95,7 @@ namespace Network {
 
         public UniTask SendReadyAckAsync() => SendSocketJsonAsync(new ReadyAckMessageDto());
 
-        public UniTask SendInputAsync(Vector2 moveDirection, Vector2 attackDirection) {
+        public UniTask SendInputAsync(Vector2 moveDirection, Vector2 attackDirection, bool usedSkill) {
             if (nextClientTick == long.MaxValue) {
                 throw new InvalidOperationException("Client input tick reached its maximum value.");
             }
@@ -104,7 +104,8 @@ namespace Network {
                 ClientTick = nextClientTick++,
                 MoveDir = new Vector2Dto(moveDirection),
                 AttackDir = new Vector2Dto(attackDirection),
-                PressedAttack = attackDirection != Vector2.zero
+                PressedAttack = attackDirection != Vector2.zero && !usedSkill,
+                PressedSkill = attackDirection != Vector2.zero && usedSkill
             };
             InputSubmitted?.Invoke(input);
             return SendSocketJsonAsync(input);
