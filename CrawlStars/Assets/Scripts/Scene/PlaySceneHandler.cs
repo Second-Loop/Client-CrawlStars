@@ -3,6 +3,7 @@ using Core.Player;
 using Managing;
 using Network;
 using Popup;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +13,7 @@ namespace Scene {
         [SerializeField] private AimRenderer aimRenderer;
         [SerializeField] private CooldownView cooldownView;
         [SerializeField] private GameObject waitingCurtain;
+        [SerializeField] private TextMeshProUGUI infoText;
 
         protected override void Start() {
             base.Start();
@@ -26,6 +28,15 @@ namespace Scene {
 
             waitingCurtain.SetActive(true);
             cooldownView.gameObject.SetActive(false);
+        }
+
+        protected override void Update() {
+            if (Input.GetKeyDown(KeyCode.B)) {
+                bool isActive = !benchMarker.gameObject.activeSelf;
+                benchMarker.gameObject.SetActive(isActive);
+                infoText.text = $"Press 'B' to {(isActive ? "hide" : "show")} benchmarker";
+            }
+            base.Update();
         }
 
         private void OnDestroy() {
