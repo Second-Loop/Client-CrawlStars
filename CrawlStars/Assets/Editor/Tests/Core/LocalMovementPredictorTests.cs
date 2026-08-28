@@ -83,12 +83,14 @@ namespace Tests.EditMode.Core {
         }
 
         [Test]
-        public void TryUpdatePosition_PredictionDurationElapsed_ReturnsToLatestServerPosition() {
+        public void TryUpdatePosition_AtPredictionDuration_ReturnsToLatestServerPosition() {
             var predictor = ActivePredictor();
 
-            for (var frame = 0; frame < 8; frame++) {
-                predictor.TryUpdatePosition(1f / 60f, out _);
-            }
+            predictor.TryUpdatePosition(0.119f, out _);
+
+            Assert.That(predictor.IsActive, Is.True);
+
+            predictor.TryUpdatePosition(0.001f, out _);
 
             Assert.That(predictor.IsActive, Is.False);
             Assert.That(predictor.CurPosition, Is.EqualTo(Vector2.zero));
