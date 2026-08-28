@@ -113,8 +113,7 @@ namespace Core {
 
             accumulator = shouldSendImmediately ? 0f : accumulator % InputInterval;
 
-            // 추후 usedSkill 보내기 
-            await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection);
+            await NetworkManager.Instance.SendInputAsync(moveDirection, attackDirection, inputProvider.UsedSkill);
         }
 
         private void HandleInputSubmitted(InputMessageDto input) {
