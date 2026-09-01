@@ -190,11 +190,9 @@ DNS Only에서는 Cloudflare 프록시의 보호 기능을 일부 사용할 수 
 
 서버 스냅샷을 처리하는 프레임에서 간헐적인 스파이크가 발생. 추측으로 최적화하지 않고 Unity Profiler의 `ProfilerMarker`로 메시지 역직렬화와 스냅샷 적용 구간을 분리해 측정.
 
-<!-- 방법 -->
-
 초기 측정에서 전체 메시지 처리에는 `1.14ms`, `33.9KB`의 GC 할당이 발생. 이 중 스냅샷 적용은 `0.06ms`, `182B`에 불과했고, JSON 역직렬화가 `1.05ms`, `26.8KB`를 차지해 실제 병목임을 확인. 30Hz 기준으로 같은 비용이 반복되면 초당 약 `1MB`의 불필요한 할당이 발생할 수 있는 상태였음.
 
-<!-- 병목capture -->
+<img width="665" height="93" alt="병목capture" src="https://github.com/user-attachments/assets/ea46a921-9d2c-4874-99be-b80662d9b232" />
 
 메시지 타입을 확인하기 위해 전체 JSON을 Envelope로 한 번 읽은 뒤, Payload를 다시 역직렬화하면서 동일한 JSON을 두 번 파싱하고 있었음.
 
@@ -202,13 +200,13 @@ DNS Only에서는 Cloudflare 프록시의 보호 기능을 일부 사용할 수 
 
 먼저 메시지 타입과 Payload를 모두 포함하는 공통 `SocketMessageDto`로 한 번만 역직렬화한 뒤 `Type`에 따라 처리하도록 변경. 중복 파싱을 제거한 결과 전체 처리 시간은 `1.14ms → 0.66ms`, GC 할당은 `33.9KB → 22.5KB`로 감소.
 
-<!-- 해결1capture -->
+<img width="643" height="91" alt="해결1capture" src="https://github.com/user-attachments/assets/42044e62-739a-4673-a9f6-32825fed9249" />
 
 남은 할당을 확인한 결과 플레이어와 투사체 데이터에서 반복 생성되는 `Vector2Dto`가 주요 원인이었음. 참조 타입으로 유지할 이유가 없는 좌표 DTO를 `class`에서 `struct`로 변경해 개별 객체 할당을 제거.
 
 최종 측정에서는 전체 처리 시간이 `0.25ms`, GC 할당이 `6.3KB`까지 감소. 최초 상태와 비교하면 처리 시간은 약 `78%`, GC 할당은 약 `81%` 줄었고, 30Hz 기준 초당 할당량도 약 `1MB → 189KB`로 감소.
 
-<!-- 최종capture -->
+<img width="648" height="97" alt="최종capture" src="https://github.com/user-attachments/assets/fae4de09-f169-4583-b639-3714f105a31a" />
 
 `PlayerData`와 `ProjectileData`처럼 생명주기와 `null` 의미가 필요한 객체는 값 타입으로 무리하게 바꾸지 않음. 프로파일러에서 확인된 병목만 제거하고, 스냅샷 처리 비용이 프레임 예산에서 충분히 작아진 시점에 최적화를 종료.
 
