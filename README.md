@@ -25,7 +25,7 @@
 
 <br/>
 
-## 빌드 다운로드 링크 (1.0.0-beta2)
+## 📦 빌드 다운로드 링크 (1.0.0-beta2)
 
 - [[Windows](https://drive.google.com/file/d/1q9JwMjrpYBpcsL2LoUgqRNFU1aqYbsMl/view?usp=sharing)]
 - [[MacOS](https://drive.google.com/file/d/1qwz4qqAThpYu0MF8l9U-ReaU2mt3y_8_/view?usp=sharing)]
@@ -33,18 +33,15 @@
 
 <br/>
 
-## 핵심 기술
+## ⚙️ 핵심 기술
 
 ### 1. 서버 권위 모델
 
-클라이언트는 입력 명령만 전송하고 게임 상태를 확정하지 않음. 서버가 30Hz tick에서 입력을 처리하고 권위 상태를 스냅샷으로 반환.
+1. 클라이언트는 게임 상태를 직접 확정하지 않고 `MoveDir`, `AttackDir`, `PressedAttack`, `PressedSkill`, `ClientTick`으로 구성된 입력 명령만 서버에 전송.
+2. 서버는 30Hz tick에서 입력을 처리하고 위치, 충돌, 공격 승인, 투사체, 피해, 사망과 승패를 최종 판정한 뒤 전체 상태를 스냅샷으로 반환.
+3. 클라이언트는 서버 스냅샷을 `PlayerManager`, `ProjectileManager`, `BushVisibilityController`에 분배해 화면에 반영.
 
-| 구분 | 처리 기준 |
-| --- | --- |
-| 클라이언트 전송 | `MoveDir`, `AttackDir`, `PressedAttack`, `ClientTick` |
-| 서버 최종 판정 | 위치, 충돌, 공격 승인, 투사체, 피해, 사망, 승패 |
-| 클라이언트 상태 적용 | `PlayerManager`, `ProjectileManager`, `BushVisibilityController` |
-| 로컬 예외 처리 | 내 플레이어의 이동 위치만 최대 0.12초 예측 |
+조작 반응성이 중요한 내 플레이어의 이동 위치만 최대 0.12초 동안 예측하며, 공격 승인과 피해·사망 등 전투 결과는 항상 서버 판정을 적용.
 
 <br/>
 
@@ -65,22 +62,22 @@
 
 <br/>
 
-## 핵심 플레이 흐름
+## 🎮 핵심 플레이 흐름
 
-### 1. 인게임 코어 로직 flow
+### 1. 인게임 코어 로직 흐름
 
 <img width="641" height="529" alt="core" src="https://github.com/user-attachments/assets/72a8df17-9076-477e-8679-6197f2f138e7" />
 
 1. 클라이언트에서 매 프레임 이동 방향과 공격 방향 입력 수집
-2. 30Hz `ClientTick`에 맞춰 입력을 서버로 전송
+2. 30Hz 주기로 `ClientTick`을 포함한 입력을 서버에 전송
 3. 서버에서 모든 클라이언트 입력을 수신해 플레이어와 투사체 시뮬레이션
-4. 충돌·피격·사망·게임 종료 판정 후 전체 상태 snapshot 생성
-5. snapshot을 모든 클라이언트에 전송
+4. 충돌·피격·사망·게임 종료 판정 후 전체 상태 스냅샷 생성
+5. 스냅샷을 모든 클라이언트에 전송
 6. 클라이언트에서 플레이어와 투사체를 생성·갱신·회수하고 화면에 렌더링
 
 <br/>
 
-### 2. 매치메이킹 flow
+### 2. 매치메이킹 흐름
 
 <img width="429" height="746" alt="matching" src="https://github.com/user-attachments/assets/7bef2594-1c22-45e6-9150-85f486bd7ce4" />
 
@@ -89,12 +86,12 @@
 3. 인원 충족 후 서버의 `Ready` 메시지 수신
 4. Play 씬으로 이동해 맵과 플레이어 로드·초기화
 5. 초기화 완료 후 각 클라이언트에서 `ready` ACK 전송
-6. 모든 클라이언트 준비 완료 시 `starting` snapshot 수신
-7. 5초 카운트다운 후 `started` snapshot과 함께 인게임 루프 시작
+6. 모든 클라이언트 준비 완료 시 `starting` 스냅샷 수신
+7. 5초 카운트다운 후 `started` 스냅샷과 함께 인게임 루프 시작
 
 <br/>
 
-## 설계와 구현
+## 🏗️ 설계와 구현
 
 ### 1. 입력 수집과 네트워크 전송 주기 분리
 
@@ -152,7 +149,7 @@ ESC 입력은 현재 열린 최상단 팝업의 `CanCloseWithEsc`를 확인한 �
 
 <br/>
 
-## 문제 발생 및 해결 방법
+## 🛠️ 문제 발생 및 해결 방법
 
 <details>
 <summary><h3>1. 300~1000ms의 느린 입력 레이턴시를 50ms까지 단축</h3></summary>
@@ -161,7 +158,7 @@ ESC 입력은 현재 열린 최상단 팝업의 `CanCloseWithEsc`를 확인한 �
 
 서버 연동 초기에는 입력 반응 속도가 매우 느렸음. 최적화 전 레이턴시는 약 `300~1000ms`로 편차가 컸지만, 입력 전송부터 서버 처리와 스냅샷 수신까지 어느 구간에서 지연되는지 체감만으로는 구분하기 어려웠음.
 
-실제 입력 레이턴시에 대해 문제를 직면하고 개선하기 위한 전 단계로 측정과 시각화 필요.
+원인을 분리하고 개선 효과를 검증하려면 레이턴시를 동일한 기준으로 측정하고 시각화할 도구가 필요했음.
 
 ### 해결 방법
 
@@ -259,7 +256,7 @@ if (!IsActive) {
 
 <br/>
 
-## 주요 디렉터리
+## 🗂️ 주요 디렉터리
 
 ```text
 CrawlStars/
