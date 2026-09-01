@@ -38,8 +38,6 @@
 | 클라이언트 상태 적용 | `PlayerManager`, `ProjectileManager`, `BushVisibilityController` |
 | 로컬 예외 처리 | 내 플레이어의 이동 위치만 최대 0.12초 예측 |
 
-`NetworkManager`가 WebSocket 메시지를 `SocketMessageDto`로 역직렬화하고 `ClientGameLoop`에 스냅샷 전달. `ClientGameLoop`는 플레이어, 투사체, 부시 시야를 각각의 매니저에 분배. 로컬 예측 중에도 공격 승인, HP, 사망 등 전투 결과는 항상 서버 값 적용.
-
 <br/>
 
 ### 2. 이동 예측과 서버 보정
@@ -54,8 +52,6 @@
 6. 서버 ACK, 정지 입력, 사망 또는 0.12초 경과 시 서버 위치로 보정
 
 프레임별 예측 이동량은 `direction × serverSpeed × progress² × deltaTime`으로 계산. 예측 초반 이동량을 낮게 시작해 서버 위치로 되돌아갈 때 발생하는 시각적 오차를 제한.
-
-예측 중 `PlayerManager.ApplySnapshot`은 내 플레이어 transform 갱신만 보류. `LocalMovementPredictor.ObserveSnapshot`은 `nextServerPos - serverPos`를 현재 예측 위치에 더하고, `LastProcessedClientTick >= pendingClientTick`이면 예측 종료 후 서버 위치 적용.
 
 현재 구현은 스냅샷 버퍼 기반 보간이 아니라 로컬 예측과 서버 보정(reconciliation) 구조. 원격 플레이어 위치는 수신한 스냅샷을 즉시 적용.
 
@@ -124,11 +120,11 @@
 
 ### 3. 매칭부터 게임 종료까지 단계화된 수명주기
 
-게임 진입 흐름을 `REST 매칭 → WebSocket 연결 → Ready 수신 → Play 씬 로드 → 맵·플레이어 초기화 → Ready ACK → starting → started` 순서로 구성. 씬이 활성화되기 전에 게임 데이터를 초기화하고, 활성화된 뒤 Ready ACK를 보내 모든 클라이언트의 로딩이 끝난 시점에 서버가 게임을 시작하도록 연결.
+Ready ACK를 클라이언트 로딩 완료 장벽으로 사용. Play 씬이 활성화되기 전에 맵과 플레이어를 초기화하고 활성화된 뒤 ACK를 전송해, 모든 클라이언트의 준비가 끝난 시점에 서버가 게임을 시작하도록 구성.
 
 공용 매니저는 Splash 씬에서 생성한 뒤 `DontDestroyOnLoad`로 유지. 다음 씬은 Additive 방식으로 비동기 로드해 활성화한 후 이전 씬을 정리하고, `Main → Play → 전투 → 승패 → Main` 흐름을 에디터 재시작 없이 반복.
 
-`MatchingPopup`이 취소 토큰을 소유해 팝업 종료와 매칭 작업의 수명주기를 함께 관리. WebSocket은 연결마다 별도 인스턴스를 사용하고, 연결 중 전송 요청은 큐에 보관. 재매칭 시 이전 연결과 새 연결이 충돌하지 않도록 종료 대상을 분리하며, 종료 핸드셰이크에는 3초 제한 시간을 적용.
+WebSocket은 연결마다 별도 인스턴스를 사용하고, 연결 중 전송 요청은 큐에 보관. 재매칭 시 이전 연결과 새 연결이 충돌하지 않도록 종료 대상을 분리하며, 종료 핸드셰이크에는 3초 제한 시간을 적용.
 
 게임 종료나 중도 이탈 시 `GameManager.Dispose`에서 맵, 플레이어, 투사체, 예측 상태, 이벤트 구독과 소켓을 한 흐름으로 정리.
 
