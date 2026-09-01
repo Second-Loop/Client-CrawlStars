@@ -111,90 +111,61 @@
 
 <br/>
 
-## 클라이언트 아키텍처
+## 설계와 구현
 
-```mermaid
-flowchart LR
-    Input["InputProvider\n입력 수집"] --> Loop["ClientGameLoop\n입력 전송·상태 적용"]
-    Attack["AttackManager\n공격·스킬 입력 관리"] --> Loop
-    Loop --> Network["NetworkManager\nREST·WebSocket·ClientTick"]
-    Network <--> Server["Server-CrawlStars\n30Hz 시뮬레이션·최종 판정"]
+### 1. 입력 수집과 네트워크 전송 주기 분리
 
-    Network --> Ack["InputAckTracker\n처리 지연·타임아웃 측정"]
-    Network --> Loop
+`InputProvider`가 렌더링 프레임마다 이동·조준·공격 입력을 먼저 수집하고, `ClientGameLoop`가 서버 tick과 같은 30Hz 주기로 저장된 입력을 꺼내 전송. 공격 버튼을 놓는 순간의 방향은 내부에 보관한 뒤 한 번만 소비해 렌더링 프레임 사이의 짧은 입력도 놓치지 않도록 구성.
 
-    Loop --> Predictor["LocalMovementPredictor\n로컬 이동 예측·서버 보정"]
-    Physics["GamePhysics\n맵 경계·벽 충돌"] --> Predictor
-    Predictor --> Players["PlayerManager"]
-    Loop --> Players
-    Loop --> Projectiles["ProjectileManager"]
-    Loop --> Visibility["BushVisibilityController"]
+이동 방향이 바뀌거나 공격이 발생하면 다음 tick을 기다리지 않고 즉시 전송. 실행 순서는 `NetworkManager → InputProvider → ClientGameLoop`로 고정해 서버 메시지 수신, 입력 수집과 전송이 같은 프레임 안에서 일정한 순서로 처리되도록 설계.
 
-    Players --> Pool["Object Pool"]
-    Projectiles --> Pool
-    Scene["SceneController\nSplash → Main → Play"] --> UI["Popup·전투 UI"]
-    Loop --> UI
-```
-
-`NetworkManager`가 서버 메시지 송수신을 담당하고, `ClientGameLoop`가 입력 전송과 스냅샷 적용 순서를 조율. 
-
-게임 상태 표현은 플레이어·투사체·시야 매니저로 분리하고, 로컬 이동 예측은 별도 객체로 구성해 서버 상태 적용과 분리. 
-
-씬 전환과 팝업은 UniTask 기반의 비동기 흐름으로 관리.
+각 입력에는 단조 증가하는 `ClientTick`을 부여하고 서버 스냅샷의 `LastProcessedClientTick`으로 처리 여부를 확인. `InputAckTracker`는 latest-only 전송에서 중간 스냅샷이 생략될 수 있음을 고려해 더 높은 tick이 확인되면 이전 입력을 함께 정리.
 
 <br/>
 
-## 설계와 문제 해결
+### 2. 서버 스냅샷을 표현 계층별로 분배
 
-### 1. 입력 지연을 눈에 보이는 값으로 추적
+`ClientGameLoop`는 게임 오브젝트를 직접 관리하지 않고 입력 전송과 스냅샷 적용 순서만 조율. 수신한 스냅샷은 로컬 이동 예측, 플레이어, 투사체와 부시 시야를 담당하는 객체에 각각 분배.
 
-입력은 서버 tick과 같은 30Hz로 전송하되, 이동 방향 변경이나 공격 발생 시 다음 주기를 기다리지 않고 즉시 전송. 실행 순서는 `NetworkManager → InputProvider → ClientGameLoop`로 고정해 수신 처리와 입력 수집을 같은 프레임에서 안정적으로 연결.
+로컬 플레이어는 서버 상태를 `LocalMovementPredictor`에 먼저 전달한 뒤 스냅샷 적용. 예측 중에는 내 플레이어의 위치 갱신만 보류하고, HP, 공격, 피격과 사망 같은 전투 결과는 계속 서버 값을 적용해 예측 범위를 이동 표현으로 한정.
 
-`InputAckTracker`는 각 `ClientTick`의 전송 시각을 기록하고 스냅샷의 `LastProcessedClientTick`과 비교해 서버 처리 시간을 계산. 더 높은 tick이 확인되면 중간 스냅샷이 합쳐진 정상 상황으로 처리하고, 3초 동안 확인되지 않은 입력만 타임아웃으로 집계. `BenchMarker`에서 지연 시간, 대기 입력 수와 타임아웃 비율을 시각화.
+플레이어와 투사체는 서버 ID를 키로 관리하며 최신 스냅샷을 기준으로 생성·갱신·회수. 파괴 스냅샷을 놓친 투사체도 최신 ID 집합에서 사라지면 회수해 이벤트 누락 여부와 관계없이 서버 권위 상태로 수렴. 반복 생성되는 맵 타일, 플레이어와 투사체는 오브젝트 풀로 재사용.
 
-네트워크 경로도 별도로 측정. Cloudflare Proxy 경유가 지연에 미치는 영향을 확인한 뒤 DNS Only로 전환해 평균 응답 시간을 약 50ms까지 단축. 예측 도입 전에 전송 주기, 프레임 실행 순서와 네트워크 경로에서 발생하는 지연부터 분리.
-
-<br/>
-
-### 2. 코드와 서버 계약이 함께 바뀌도록 관리
-
-매치메이킹 요청에 선택한 게임 모드와 캐릭터 타입을 포함하고, 응답의 모드·캐릭터·세션 정보가 요청과 일치하는지 검증. Ready 메시지와 게임플레이 스냅샷에서도 같은 `CharacterType`을 사용해 모든 클라이언트가 동일한 참가자 외형을 구성.
-
-조준선은 고정 길이 대신 선택 캐릭터의 일반 공격·스킬 사거리를 반영. 캐릭터 수치와 맵 설정은 서버와 공유하는 `game-config.json`에서 읽어 화면 표현과 서버 판정의 기준을 통일. 관련 변경: 
-
-REST와 WebSocket 메시지 형식은 [OpenAPI](CrawlStars/Docs/References/API/openapi.yaml)와 [AsyncAPI](CrawlStars/Docs/References/API/asyncapi.yaml)로 관리. Unity 빌드 전처리 과정에서 서버 저장소의 최신 게임 설정과 API 문서를 가져와 검증해 클라이언트 코드와 서버 계약의 불일치 방지.
+부시 타일은 초기화 시 연결된 영역을 BFS로 구분. 스냅샷 위치를 기준으로 내 플레이어와 같은 부시 영역에 있는 상대만 표시해 시야 판정과 렌더링 처리를 분리.
 
 <br/>
 
-### 3. 매칭부터 재시작까지 하나의 비동기 흐름으로 연결
+### 3. 매칭부터 게임 종료까지 단계화된 수명주기
 
-`Main → Play → 전투 → 승패 → Main` 흐름을 에디터 재시작 없이 반복하도록 구성. 공용 매니저는 Splash 씬에서 생성한 뒤 `DontDestroyOnLoad`로 유지하고, 다음 씬을 Additive 방식으로 비동기 로드해 활성화한 다음 이전 씬을 정리.
+게임 진입 흐름을 `REST 매칭 → WebSocket 연결 → Ready 수신 → Play 씬 로드 → 맵·플레이어 초기화 → Ready ACK → starting → started` 순서로 구성. 씬이 활성화되기 전에 게임 데이터를 초기화하고, 활성화된 뒤 Ready ACK를 보내 모든 클라이언트의 로딩이 끝난 시점에 서버가 게임을 시작하도록 연결.
 
-매칭, WebSocket 연결, 팝업과 씬 전환은 UniTask로 연결. `MatchingPopup`이 취소 토큰을 소유해 매칭 취소 시 대기 요청과 소켓을 함께 정리. 연결마다 WebSocket 인스턴스를 분리하고, 종료 핸드셰이크에는 3초 제한 시간을 적용하며, 애플리케이션 종료 시 즉시 연결 중단.
+공용 매니저는 Splash 씬에서 생성한 뒤 `DontDestroyOnLoad`로 유지. 다음 씬은 Additive 방식으로 비동기 로드해 활성화한 후 이전 씬을 정리하고, `Main → Play → 전투 → 승패 → Main` 흐름을 에디터 재시작 없이 반복.
 
-팝업 결과는 `UniTaskCompletionSource`로 반환. 호출부는 `await PopupManager.ShowAsync` 형태로 사용자 선택을 기다리고, 팝업 표시 순서와 Canvas 정렬은 중앙에서 관리.
+`MatchingPopup`이 취소 토큰을 소유해 팝업 종료와 매칭 작업의 수명주기를 함께 관리. WebSocket은 연결마다 별도 인스턴스를 사용하고, 연결 중 전송 요청은 큐에 보관. 재매칭 시 이전 연결과 새 연결이 충돌하지 않도록 종료 대상을 분리하며, 종료 핸드셰이크에는 3초 제한 시간을 적용.
 
-<br/>
-
-### 4. 로컬 프로토타입에서 서버 구조로 책임 이전
-
-서버 구현 전 30Hz 로컬 시뮬레이터와 봇으로 이동, 충돌, 공격과 전투 흐름을 우선 검증. A* 경로 탐색, 추격·후퇴, 투사체 회피까지 클라이언트에서 시험한 뒤 서버 구현 완료 시점에 판정 책임을 서버로 이전. 현재 클라이언트는 사람과 봇을 같은 `PlayerData` 스냅샷으로 표현하고, 이전 시뮬레이터는 레거시 코드로 분리.
-
-반복 생성되는 맵 타일, 플레이어와 투사체는 오브젝트 풀로 관리하고 Sprite 조회 결과도 캐싱. 네트워크 메시지는 공통 `SocketMessageDto`로 한 번만 역직렬화하고, `Vector2Dto`를 값 타입으로 변경해 반복 수신 과정의 할당 감소.
+게임 종료나 중도 이탈 시 `GameManager.Dispose`에서 맵, 플레이어, 투사체, 예측 상태, 이벤트 구독과 소켓을 한 흐름으로 정리.
 
 <br/>
 
-### 5. 정상 흐름보다 경계 조건을 테스트
+### 4. 서버 수치와 클라이언트 표현 데이터 분리
 
-Unity Test Framework와 NUnit을 사용해 순수 로직과 Unity 오브젝트 의존 테스트를 분리. 정상 동작뿐 아니라 누락된 스냅샷, 잘못된 설정값, 중복 호출과 맵 경계처럼 상태가 어긋날 수 있는 조건을 회귀 테스트로 보존.
+서버 판정과 연결되는 타일 크기, 충돌 반경, 캐릭터 사거리와 쿨타임은 서버와 공유하는 `game-config.json`에서 관리. 캐릭터 설명, 아이콘과 모드 UI처럼 Unity에서만 사용하는 표현 데이터는 Addressables의 `ScriptableObject`로 분리.
 
-- `GamePhysics`: 맵 경계, 벽·물 충돌, 축별 미끄러짐과 잘못된 맵 데이터
-- `ProjectileManager`: 생성·갱신·파괴와 스냅샷에서 사라진 투사체 회수
-- `InputAckTracker`: 단조 증가 tick, ACK 지연, 중간 tick 정리와 타임아웃
-- `CooldownController`, `MapHelper`: 충전·회복 경계값과 좌표·타일 판정
-- `ObjectPooling`, `SpriteCacheHelper`, `Cache`: 재사용, 중복 회수와 씬 전환 후 캐시 초기화
+초기화 시 `CharacterInfo`가 캐릭터 타입을 기준으로 두 데이터 소스를 결합해 전투 UI와 게임 표현에 제공. 서버와 공유해야 하는 수치에 클라이언트 전용 리소스 정보를 섞지 않으면서 조준선과 쿨다운 UI가 서버 설정과 같은 값을 사용하도록 구성.
 
-테스트 전후 정적 캐시와 생성 오브젝트를 초기화하고 `LogAssert`로 오류 경로까지 확인. PR 리뷰에서 발견한 동시 사망, 매칭 취소, 초기화 경쟁과 누락 스냅샷도 검증 범위에 포함.
+매치메이킹 요청과 Ready·스냅샷에서는 동일한 게임 모드와 `CharacterType`을 사용. 응답이 요청한 모드·캐릭터와 일치하는지 검증한 뒤 게임에 진입.
+
+REST와 WebSocket 메시지 형식은 [OpenAPI](CrawlStars/Docs/References/API/openapi.yaml)와 [AsyncAPI](CrawlStars/Docs/References/API/asyncapi.yaml)로 관리. Unity 빌드 전처리 과정에서 서버 저장소의 최신 게임 설정과 API 문서를 가져와 코드, 설정과 서버 계약이 함께 변경되도록 구성.
+
+<br/>
+
+### 5. 로직과 표현 계층의 의존성 제한
+
+충돌 계산, 쿨다운, 맵 좌표 변환과 ACK 추적은 Unity 오브젝트 수명주기에서 분리된 객체로 구성해 상태 변화와 경계 조건을 독립적으로 검증. `CooldownView`는 `IAttackCooldownSource`를 통해 필요한 읽기 전용 데이터만 받아 전투 로직의 구체 구현에 의존하지 않도록 설계.
+
+팝업은 `UniTaskCompletionSource`로 결과를 반환. 호출부는 `await PopupManager.ShowAsync` 형태로 사용자 선택을 기다리고, 팝업 생성·정렬·닫기 순서는 `PopupManager`에서 관리해 개별 화면의 제어 흐름과 UI 수명주기를 분리.
+
+Unity Test Framework와 NUnit으로 맵 경계와 충돌, 투사체 상태 수렴, tick 단조 증가와 ACK 타임아웃, 쿨다운 경계값, 오브젝트 풀의 중복 회수, 씬 전환 후 캐시 초기화를 회귀 테스트로 보존.
 
 <br/>
 
