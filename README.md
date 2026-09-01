@@ -12,16 +12,24 @@
 
 <br/>
 
-## 한눈에 보기
 
 | 항목 | 내용                                                                                |
 | --- |-----------------------------------------------------------------------------------|
-| 개발 기간 | 2026년 5월 13일 ~ 진행 중                                                          |
+| 개발 기간 | 2026.05.13 ~ 2026.08.28                                                          |
 | 팀 구성 | 클라이언트 1명, 서버 1명 |
 | 담당 | 클라이언트 전반, 서버 권위 동기화, 클라이언트 예측·보정, 매치메이킹, 네트워크                    |
 | 엔진 | Unity `6000.3.15f1`, URP 2D                                                       |
 | 주요 기술 | C#, UniTask, REST, WebSocket, Addressables, DOTween              |
 | 서버 | [Second-Loop/Server-CrawlStars](https://github.com/Second-Loop/Server-CrawlStars) |
+
+
+<br/>
+
+## 빌드 다운로드 링크 (1.0.0-beta2)
+
+- [[Windows](https://drive.google.com/file/d/1q9JwMjrpYBpcsL2LoUgqRNFU1aqYbsMl/view?usp=sharing)]
+- [[MacOS](https://drive.google.com/file/d/1qwz4qqAThpYu0MF8l9U-ReaU2mt3y_8_/view?usp=sharing)]
+  - '파일이 손상되었기 때문에 열 수 없습니다.' 혹은 'Gatekeeper 보안 기능' 등으로 앱 실행이 되지 않을 때 다음 명령어 실행 `xattr -dr com.apple.quarantine /path/to/YourGame.app`
 
 <br/>
 
@@ -57,19 +65,11 @@
 
 <br/>
 
-## 빌드 링크 (1.0.0-beta2)
-
-- [[Windows](https://drive.google.com/file/d/1q9JwMjrpYBpcsL2LoUgqRNFU1aqYbsMl/view?usp=sharing)]
-- [[MacOS](https://drive.google.com/file/d/1qwz4qqAThpYu0MF8l9U-ReaU2mt3y_8_/view?usp=sharing)]
-  - '파일이 손상되었기 때문에 열 수 없습니다.' 혹은 'Gatekeeper 보안 기능' 등으로 앱 실행이 되지 않을 때 다음 명령어 실행 `xattr -dr com.apple.quarantine /path/to/YourGame.app`
-
-<br/>
-
 ## 핵심 플레이 흐름
 
 ### 1. 인게임 코어 로직 flow
 
-<img width="915" height="755" alt="core" src="https://github.com/user-attachments/assets/72a8df17-9076-477e-8679-6197f2f138e7" />
+<img width="641" height="529" alt="core" src="https://github.com/user-attachments/assets/72a8df17-9076-477e-8679-6197f2f138e7" />
 
 1. 클라이언트에서 매 프레임 이동 방향과 공격 방향 입력 수집
 2. 30Hz `ClientTick`에 맞춰 입력을 서버로 전송
@@ -155,15 +155,18 @@ ESC 입력은 현재 열린 최상단 팝업의 `CanCloseWithEsc`를 확인한 �
 ## 문제 발생 및 해결 방법
 
 <details>
-<summary><strong>1. 측정 도구 구축으로 300~1000ms 입력 레이턴시를 50ms까지 단축</strong></summary>
+<summary><h3>1. 300~1000ms의 느린 입력 레이턴시를 50ms까지 단축</h3></summary>
 
 ### 문제 발생
 
-서버 연동 초기에는 시뮬레이션이 원활하게 동작하지 않았고 입력 반응 속도도 매우 느렸음. 최적화 전 레이턴시는 약 `300~1000ms`로 편차가 컸지만, 입력 전송부터 서버 처리와 스냅샷 수신까지 어느 구간에서 지연되는지 체감만으로는 구분하기 어려웠음.
+서버 연동 초기에는 입력 반응 속도가 매우 느렸음. 최적화 전 레이턴시는 약 `300~1000ms`로 편차가 컸지만, 입력 전송부터 서버 처리와 스냅샷 수신까지 어느 구간에서 지연되는지 체감만으로는 구분하기 어려웠음.
+
+실제 입력 레이턴시에 대해 문제를 직면하고 개선하기 위한 전 단계로 측정과 시각화 필요.
 
 ### 해결 방법
 
-레이턴시를 재현 가능한 값으로 확인하기 위해 `BenchMarker`와 측정 전용 `InputAckTracker`를 개발. `BenchMarker`는 `NetworkManager.InputSubmitted` 이벤트를 구독하고, 입력이 전송될 때마다 `ClientTick`과 `Time.realtimeSinceStartupAsDouble` 기준 전송 시각을 큐에 저장. 이동·공격 방향도 함께 읽어 입력된 W·A·S·D 키와 마우스 버튼을 화면에서 점멸시켜 실제 입력 전송 여부를 바로 확인할 수 있도록 구성.
+레이턴시를 재현 가능한 값으로 확인하기 위해 `BenchMarker`와 측정 전용 `InputAckTracker`를 개발. 
+`BenchMarker`는 `NetworkManager.InputSubmitted` 이벤트를 구독하고, 입력이 전송될 때마다 `ClientTick`과 `Time.realtimeSinceStartupAsDouble` 기준 전송 시각을 큐에 저장. 이동·공격 방향도 함께 읽어 입력된 W·A·S·D 키와 마우스 버튼을 화면에서 점멸시켜 실제 입력 전송 여부를 바로 확인할 수 있도록 구성.
 
 서버 스냅샷을 받으면 내 `PlayerData`에서 `LastProcessedClientTick`을 찾아 대기 중인 입력 큐와 비교. 서버가 더 높은 tick까지 처리했다면 그 이하의 입력을 큐에서 모두 제거하고, 수신한 tick과 정확히 일치하는 입력의 전송 시각이 남아 있을 때만 `현재 시각 - 전송 시각`으로 레이턴시를 계산. 중간 tick의 스냅샷이 전달되지 않은 경우에는 처리 완료 상태만 반영하고 잘못된 레이턴시 값은 만들지 않도록 함.
 
@@ -180,7 +183,7 @@ DNS Only에서는 Cloudflare 프록시의 보호 기능을 일부 사용할 수 
 </details>
 
 <details>
-<summary><strong>2. 30Hz 스냅샷 처리 중 JSON 역직렬화로 발생한 GC 병목</strong></summary>
+<summary><h3>2. 30Hz 스냅샷 처리 중 JSON 역직렬화로 발생한 GC 병목</h3></summary>
 
 ### 문제 발생
 
@@ -209,7 +212,7 @@ DNS Only에서는 Cloudflare 프록시의 보호 기능을 일부 사용할 수 
 </details>
 
 <details>
-<summary><strong>3. 입력 예측 중 방향 전환 시 움직임이 순간적으로 끊기는 문제</strong></summary>
+<summary><h3>3. 입력 예측 중 방향 전환 시 움직임이 순간적으로 끊기는 문제</h3></summary>
 
 ### 문제 발생
 
