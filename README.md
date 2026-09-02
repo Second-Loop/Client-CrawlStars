@@ -159,6 +159,7 @@ REST와 WebSocket 메시지 형식은 [OpenAPI](CrawlStars/Docs/References/API/o
 ESC 입력은 현재 열린 최상단 팝업의 `CanCloseWithEsc`를 확인한 뒤 닫도록 연결. 매칭처럼 자체 비동기 작업을 가진 팝업은 `Dispose`에서 취소 토큰과 애니메이션을 함께 정리해 UI 종료와 내부 작업의 수명주기가 분리되지 않도록 설계.
 
 <br/>
+<br/>
 
 ## 🛠️ 문제 발생 및 해결 방법
 
@@ -265,6 +266,25 @@ if (!IsActive) {
 </details>
 
 <br/>
+<br/>
+
+## 🎬 게임 플레이
+
+<img width="800" height="449" alt="전투1" src="https://github.com/user-attachments/assets/cbd30193-b444-448e-8eb4-029b7387c7d7" />
+
+<img width="800" height="449" alt="전투2" src="https://github.com/user-attachments/assets/7ceb524e-47dc-49f3-99d4-7ff8119b3972" />
+
+<img width="800" height="449" alt="전투3" src="https://github.com/user-attachments/assets/a4b66c84-fe62-40ce-b9a2-b6a860cbd54b" />
+
+<img width="800" height="449" alt="전투4" src="https://github.com/user-attachments/assets/52dd5694-36be-4b48-9eca-6462efd1340b" />
+
+<img width="800" height="449" alt="전투5" src="https://github.com/user-attachments/assets/61e71ef8-9fca-4cf8-a470-809021e034a0" />
+
+<img width="800" height="449" alt="매칭" src="https://github.com/user-attachments/assets/42c8df10-8f0d-4949-b970-fa281806480e" />
+
+
+<br/>
+<br/>
 
 ## 🗂️ 주요 디렉터리
 
@@ -284,7 +304,7 @@ CrawlStars/
 │  ├─ Scene                 Additive 씬 전환과 씬별 입력 흐름
 │  ├─ Popup, UI             await 가능한 팝업, 전투 UI와 ACK 측정
 │  └─ Utility               풀링, 캐시, 재시도와 공용 도구
-├─ Assets/Editor/Tests       EditMode 단위 테스트
+├─ Assets/Editor/Tests      EditMode 유닛 테스트
 ├─ Assets/StreamingAssets   런타임 네트워크·게임 설정
 └─ Docs/
    ├─ References/API        OpenAPI, AsyncAPI 계약
