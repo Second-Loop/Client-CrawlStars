@@ -4,10 +4,17 @@
 > 서버가 30Hz 시뮬레이션으로 게임 상태를 최종 판정하고, 로컬 예측과 서버 보정으로 조작 반응성을 확보
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e851789d-527f-4569-875e-4519f9df341e" width="49%" />
-  <img src="https://github.com/user-attachments/assets/a37e3fb2-a16f-4ec6-8250-553b22913fd4" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/2493088a-bc0f-44c7-850b-4b7821152df0" width="49%" />
-  <img src="https://github.com/user-attachments/assets/824e09f5-37dc-42f2-ba33-1b21bc5f3575" width="49%"  />
+  <img width="49%" src="https://github.com/user-attachments/assets/57b1ba1a-b2f9-4755-b8c7-29720f2f39ac" />
+
+  <img width="49%" src="https://github.com/user-attachments/assets/d20f23a4-c480-4858-8f13-1c3b2b69f1cc" />
+
+  <img width="49%" src="https://github.com/user-attachments/assets/2210962e-97f9-482d-aa63-45762d086f4e" />
+
+  <img width="49%" src="https://github.com/user-attachments/assets/246b0adb-9522-40f3-855a-de3b609dfc44" />
+
+  <img width="49%" src="https://github.com/user-attachments/assets/0902172c-3620-4a18-809d-39adf5b4ee06" />
+
+  <img width="49%" src="https://github.com/user-attachments/assets/f0e42ae7-d53e-4721-abfc-16d8f5805b30" />
 </p>
 
 <br/>
