@@ -9,14 +9,20 @@ namespace Core.Inputs {
 
         public Vector2 AimDirection { get; private set; }
         private Vector2 attackDirection;
-        public bool IsActivated { get; set; }
+        private bool isActivated;
+        public bool IsActivated {
+            get => isActivated;
+            set {
+                isActivated = value;
+                if (!value) ResetTransientInput();
+            }
+        }
         public bool UsedSkill { get; private set; }
         private AimButton currentAimButton = AimButton.None;
 
         private void Update() {
             if (!IsActivated) {
-                AimDirection = Vector2.zero;
-                attackDirection = Vector2.zero;
+                ResetTransientInput();
                 return;
             }
 
@@ -77,6 +83,13 @@ namespace Core.Inputs {
             Vector3 mouseScreenPos = Input.mousePosition;
             mouseScreenPos.z = -Cache.MainCamera.transform.position.z;
             return Cache.MainCamera.ScreenToWorldPoint(mouseScreenPos);
+        }
+
+        private void ResetTransientInput() {
+            AimDirection = Vector2.zero;
+            attackDirection = Vector2.zero;
+            UsedSkill = false;
+            currentAimButton = AimButton.None;
         }
     }
 }
