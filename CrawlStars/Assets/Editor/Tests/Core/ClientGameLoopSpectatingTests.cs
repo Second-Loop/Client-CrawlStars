@@ -3,12 +3,14 @@ using CameraControl;
 using Core;
 using Core.Inputs;
 using Core.Player;
+using Network;
 using NUnit.Framework;
 using UnityEngine;
 using Utility;
 
 namespace Tests.EditMode.Core {
     public class ClientGameLoopSpectatingTests {
+        private GameObject networkRoot;
         private GameObject cameraRoot;
         private GameObject gameLoopRoot;
         private ClientGameLoop gameLoop;
@@ -16,6 +18,9 @@ namespace Tests.EditMode.Core {
 
         [SetUp]
         public void SetUp() {
+            networkRoot = new GameObject("ClientGameLoopSpectatingTests.NetworkManager");
+            networkRoot.AddComponent<NetworkManager>();
+
             cameraRoot = new GameObject("SpectatingTestCamera");
             cameraRoot.tag = "MainCamera";
             cameraRoot.AddComponent<Camera>();
@@ -40,6 +45,7 @@ namespace Tests.EditMode.Core {
             PlayerManager.Instance.MyTeam = null;
             if (gameLoopRoot != null) Object.DestroyImmediate(gameLoopRoot);
             if (cameraRoot != null) Object.DestroyImmediate(cameraRoot);
+            if (networkRoot != null) Object.DestroyImmediate(networkRoot);
             Cache.OnChangeScene();
         }
 

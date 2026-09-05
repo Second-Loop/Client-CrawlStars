@@ -12,6 +12,7 @@ namespace Tests.EditMode.Core {
     public class ClientGameLoopDashTests {
         private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
 
+        private GameObject networkRoot;
         private GameObject gameLoopRoot;
         private GameObject listenerRoot;
         private ClientGameLoop gameLoop;
@@ -20,6 +21,9 @@ namespace Tests.EditMode.Core {
 
         [SetUp]
         public void SetUp() {
+            networkRoot = new GameObject("ClientGameLoopDashTests.NetworkManager");
+            networkRoot.AddComponent<NetworkManager>();
+
             PlayerManager.Instance.playerListeners.Clear();
             PlayerManager.Instance.MyId = "me";
             PlayerManager.Instance.MyTeam = "red";
@@ -53,6 +57,7 @@ namespace Tests.EditMode.Core {
             PlayerManager.Instance.MyTeam = null;
             if (gameLoopRoot != null) UnityEngine.Object.DestroyImmediate(gameLoopRoot);
             if (listenerRoot != null) UnityEngine.Object.DestroyImmediate(listenerRoot);
+            if (networkRoot != null) UnityEngine.Object.DestroyImmediate(networkRoot);
         }
 
         [Test]
