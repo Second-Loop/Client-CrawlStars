@@ -13,9 +13,15 @@ namespace Core.Player {
         // 임시 public
         public readonly Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
 
+        private readonly SpectatorState spectatorState = new SpectatorState();
+
         public PlayerListener MyListener { get; private set; }
+        public PlayerListener ViewListener { get; private set; }
         public string MyId { get; set; }
         public string MyTeam { get; set; }
+        public bool IsLocalPlayerDead => spectatorState.IsLocalPlayerDead;
+        public bool IsSpectating => spectatorState.IsSpectating;
+        public string ViewTargetPlayerId => spectatorState.TargetPlayerId;
 
         public void Initialize(IReadOnlyList<ReadyPlayerDto> players) {
             ClearListeners();
@@ -36,25 +42,38 @@ namespace Core.Player {
 
                 if (isMe) {
                     MyListener = listener;
+                    ViewListener = listener;
                 }
             }
         }
 
+        public void ObserveSnapshot(IReadOnlyList<PlayerData> players) {
+            spectatorState.Observe(players, MyId);
+        }
+
         public void ApplySnapshot(IReadOnlyList<PlayerData> players, bool preserveLocalMovement = false) {
+            // Resolve deaths first so a spectator target never points at an object returned to the pool.
             foreach (var player in players) {
                 if (player == null || string.IsNullOrEmpty(player.Id)) continue;
 
                 if (!playerListeners.TryGetValue(player.Id, out var listener)) {
-                    if (player.IsDead) continue;
-
-                    // 살아있는데 없으면 에러
-                    Debug.LogError($"PlayerManager.ApplySnapshot::PlayerId not found:{player.Id}");
                     continue;
                 }
 
                 if (player.IsDead) {
                     ObjectPooling.Instance.TryAbandon(Constants.Player, listener.gameObject);
                     playerListeners.Remove(player.Id);
+                    if (ReferenceEquals(MyListener, listener)) MyListener = null;
+                    if (ReferenceEquals(ViewListener, listener)) ViewListener = null;
+                }
+            }
+
+            foreach (var player in players) {
+                if (player == null || string.IsNullOrEmpty(player.Id) || player.IsDead) continue;
+
+                if (!playerListeners.TryGetValue(player.Id, out var listener)) {
+                    // 살아있는데 없으면 에러
+                    Debug.LogError($"PlayerManager.ApplySnapshot::PlayerId not found:{player.Id}");
                     continue;
                 }
 
@@ -73,15 +92,12 @@ namespace Core.Player {
                 
                 listener.BeingHit(player.Hp);
             }
+
+            ResolveViewListener();
         }
 
         public void FocusCamera() {
-            if (MyListener == null) {
-                Debug.LogError("PlayerManager.FocusCamera::Cannot find my listener object");
-                return;
-            }
-
-            Cache.CameraController.TargetPlayer = MyListener.transform;
+            Cache.CameraController.TargetPlayer = ViewListener?.transform;
         }
 
         public void ClearListeners() {
@@ -91,8 +107,20 @@ namespace Core.Player {
             playerListeners.Clear();
             Cache.CameraController.TargetPlayer = null;
             MyListener = null;
+            ViewListener = null;
+            spectatorState.Reset();
         }
 
         public bool GetListener(string id, out PlayerListener listener) => playerListeners.TryGetValue(id, out listener);
+
+        private void ResolveViewListener() {
+            ViewListener = null;
+            if (spectatorState.TargetPlayerId != null) {
+                playerListeners.TryGetValue(spectatorState.TargetPlayerId, out var listener);
+                ViewListener = listener;
+            }
+
+            FocusCamera();
+        }
     }
 }

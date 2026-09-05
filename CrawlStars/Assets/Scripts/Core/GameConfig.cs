@@ -36,28 +36,38 @@ namespace Core {
                 return false;
             }
 
-            var config = JsonConvert.DeserializeObject<GameConfigFile>(request.downloadHandler.text);
-            if (config == null) {
-                Debug.LogError("GameConfig.LoadAsync::config file is empty or invalid.");
+            if (!TryApplyJson(request.downloadHandler.text, out string error)) {
+                Debug.LogError($"GameConfig.LoadAsync::invalid config. {error}");
                 return false;
             }
 
-            Version = config.Version;
-            TileSize = config.TileSize;
-            PlayerRadius = config.PlayerRadius;
-            PlayerConfigs = config.characters ?? Array.Empty<PlayerConfig>();
-            NormalAttackCoolDown = config.normalAttackCoolDown;
-            ProjectileRadius = config.ProjectileRadius;
             return true;
         }
 
-        private sealed class GameConfigFile {
-            [JsonProperty("version")] public int Version { get; set; }
-            [JsonProperty("tileSize")] public float TileSize { get; set; }
-            [JsonProperty("playerRadius")] public float PlayerRadius { get; set; }
-            [JsonProperty("characters")] public PlayerConfig[] characters { get; set; }
-            [JsonProperty("normalAttackCoolDown")] public int normalAttackCoolDown { get; set; }
-            [JsonProperty("projectileRadius")] public float ProjectileRadius { get; set; }
+        private static bool TryApplyJson(string json, out string error) {
+            if (!GameConfigParser.TryParse(json, out var parsed, out error)) {
+                return false;
+            }
+
+            var playerConfigs = new PlayerConfig[parsed.Characters.Length];
+            for (int index = 0; index < parsed.Characters.Length; ++index) {
+                GameConfigParser.CharacterConfig character = parsed.Characters[index];
+                playerConfigs[index] = new PlayerConfig {
+                    type = character.Type,
+                    normalAttackDistance = character.NormalAttackDistance,
+                    skillAttackDistance = character.SkillAttackDistance,
+                    skillAttackCoolDown = character.SkillAttackCoolDown,
+                    maxBullets = character.MaxBullets
+                };
+            }
+
+            Version = parsed.Version;
+            TileSize = parsed.TileSize;
+            PlayerRadius = parsed.PlayerRadius;
+            PlayerConfigs = playerConfigs;
+            NormalAttackCoolDown = parsed.NormalAttackCoolDown;
+            ProjectileRadius = parsed.ProjectileRadius;
+            return true;
         }
     }
 }

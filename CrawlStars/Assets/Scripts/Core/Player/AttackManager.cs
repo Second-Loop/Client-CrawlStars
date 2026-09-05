@@ -1,5 +1,4 @@
-﻿using System;
-using Core.Character;
+﻿using Core.Character;
 using UnityEngine;
 
 namespace Core.Player {
@@ -11,32 +10,77 @@ namespace Core.Player {
         float NormalProgress { get; }
         float SkillProgress { get; }
         bool IsSkillCharged { get; }
+        bool IsDashing { get; }
     }
 
     public class AttackManager : MonoBehaviour, IAttackCooldownSource {
         private CooldownController cooldownController;
+        private AuthoritativeCombatState authoritativeCombatState;
+        private bool serverAuthoritative;
 
-        public int CurrentCharges => cooldownController?.CurrentCharges ?? 0;
-        public int MaxCharges => cooldownController?.MaxCharges ?? 1;
-        public float NormalProgress => cooldownController?.NormalProgress ?? 1f;
-        public float SkillProgress => cooldownController?.SkillProgress ?? 1f;
-        public bool IsSkillCharged => cooldownController?.IsSkillCharged ?? false;
+        public int CurrentCharges => serverAuthoritative
+            ? authoritativeCombatState?.CurrentCharges ?? 0
+            : cooldownController?.CurrentCharges ?? 0;
+        public int MaxCharges => serverAuthoritative
+            ? authoritativeCombatState?.MaxCharges ?? 1
+            : cooldownController?.MaxCharges ?? 1;
+        public float NormalProgress => serverAuthoritative
+            ? authoritativeCombatState?.NormalProgress ?? 0f
+            : cooldownController?.NormalProgress ?? 0f;
+        public float SkillProgress => serverAuthoritative
+            ? authoritativeCombatState?.SkillProgress ?? 0f
+            : cooldownController?.SkillProgress ?? 0f;
+        public bool IsSkillCharged => serverAuthoritative
+            ? authoritativeCombatState?.IsSkillCharged ?? false
+            : cooldownController?.IsSkillCharged ?? false;
+        public bool IsDashing => serverAuthoritative
+            && (authoritativeCombatState?.IsDashing ?? false);
 
-        public void Initialize() {
-            cooldownController = new CooldownController(
-                CharacterManager.Instance.MyCharacter.maxBullets, 
-                GameConfig.NormalAttackCoolDown, 
-                CharacterManager.Instance.MyCharacter.skillAttackCoolDown
+        public void Initialize(bool serverAuthoritative = false) {
+            this.serverAuthoritative = serverAuthoritative;
+            var character = CharacterManager.Instance.MyCharacter;
+
+            if (serverAuthoritative) {
+                cooldownController = null;
+                authoritativeCombatState = new AuthoritativeCombatState(
+                    character.maxBullets,
+                    GameConfig.NormalAttackCoolDown,
+                    character.skillAttackCoolDown
                 );
+                return;
+            }
+
+            authoritativeCombatState = null;
+            cooldownController = new CooldownController(
+                character.maxBullets,
+                GameConfig.NormalAttackCoolDown, 
+                character.skillAttackCoolDown
+            );
         }
 
         private void Update() {
-            if (cooldownController == null) return;
-
-            cooldownController.Tick(Time.deltaTime);
+            if (serverAuthoritative) {
+                authoritativeCombatState?.Tick(Time.deltaTime);
+            } else {
+                cooldownController?.Tick(Time.deltaTime);
+            }
         }
 
-        public bool TryNormalAttack() => cooldownController.TryNormalAttack();
-        public bool TrySkillAttack() => cooldownController.TrySkillAttack();
+        public void ObserveSnapshot(long tick, PlayerData player) {
+            if (!serverAuthoritative) return;
+            authoritativeCombatState?.Observe(tick, player);
+        }
+
+        public void Reset() {
+            authoritativeCombatState?.Reset();
+        }
+
+        public bool TryNormalAttack() => serverAuthoritative
+            ? authoritativeCombatState?.CanNormalAttack ?? false
+            : cooldownController?.TryNormalAttack() ?? false;
+
+        public bool TrySkillAttack() => serverAuthoritative
+            ? authoritativeCombatState?.CanSkillAttack ?? false
+            : cooldownController?.TrySkillAttack() ?? false;
     }
 }

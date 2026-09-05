@@ -60,14 +60,22 @@ namespace Core.Map {
         }
 
         public void SetVisibility(IReadOnlyList<PlayerData> players) {
-            var myPos = MapHelper.GetMapIdx(PlayerManager.Instance.MyListener.transform.position);
-            bool amIInBush = bushNumbers.TryGetValue(myPos, out var myBushNum);
+            var playerManager = PlayerManager.Instance;
+            var viewListener = playerManager.ViewListener;
+            bool hasViewTarget = viewListener != null;
+            var viewPos = hasViewTarget
+                ? MapHelper.GetMapIdx(viewListener.transform.position)
+                : Vector2Int.zero;
+            int viewBushNum = -1;
+            bool isViewTargetInBush = hasViewTarget
+                && bushNumbers.TryGetValue(viewPos, out viewBushNum);
 
             foreach (var player in players) {
-                if (player.Id == PlayerManager.Instance.MyId) continue;
-                if (!PlayerManager.Instance.GetListener(player.Id, out PlayerListener listener)) continue;
+                if (player == null || string.IsNullOrEmpty(player.Id)) continue;
+                if (player.Id == playerManager.MyId) continue;
+                if (!playerManager.GetListener(player.Id, out PlayerListener listener)) continue;
                 if (player.IsDead) continue;
-                if (player.Team == PlayerManager.Instance.MyTeam) continue;
+                if (player.Team == playerManager.MyTeam) continue;
 
                 var idx = MapHelper.GetMapIdx(listener.transform.position);
                 if (!MapHelper.IsInBush(idx)) {
@@ -80,7 +88,7 @@ namespace Core.Map {
                     continue;
                 }
 
-                bool canSee = amIInBush && myBushNum == bushNum;
+                bool canSee = isViewTargetInBush && viewBushNum == bushNum;
                 listener.gameObject.SetActive(canSee);
             }
         }

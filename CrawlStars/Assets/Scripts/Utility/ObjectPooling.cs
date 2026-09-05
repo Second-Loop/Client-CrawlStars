@@ -53,7 +53,7 @@ namespace Utility {
                 return false;
             }
 
-            if (!go.activeSelf) {
+            if (pool.Contains(go)) {
                 Debug.LogError($"ObjectPooling.TryAbandon::{objName} object is already abandoned.");
                 return false;
             }
