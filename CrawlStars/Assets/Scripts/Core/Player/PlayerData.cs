@@ -19,6 +19,7 @@ namespace Core.Player {
         [JsonProperty("AttackCharges")] public int AttackCharges { get; set; }
         [JsonProperty("NextAttackChargeTick")] public long NextAttackChargeTick { get; set; }
         [JsonProperty("AttackReadyTick")] public long AttackReadyTick { get; set; }
+        [JsonProperty("IsDashing")] public bool IsDashing { get; set; }
         [JsonProperty("IsDead")] public bool IsDead { get; set; }
         [JsonProperty("LastProcessedClientTick")] public long LastProcessedClientTick { get; set; }
         [JsonProperty("CharacterType")] public int CharacterType { get; set; }

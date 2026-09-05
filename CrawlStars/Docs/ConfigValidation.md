@@ -29,6 +29,6 @@ runtime 다운로드 → 공유 v3 parser → 전체 설정 반영
 
 ## 인수 빌드 선행 조건
 
-`FileSynchronizer`는 서버 저장소의 `main` 브랜치를 읽어요. 따라서 서버 PR #75가 merge되어 v3 파일이 서버 `main`에 들어간 뒤에 클라이언트 인수 build를 실행해야 해요.
+`FileSynchronizer`는 서버 저장소의 `main` 브랜치를 읽어요. v3 파일을 도입하는 서버 PR #75가 먼저 merge되어야 해요. SL-124 대시까지 포함한 최종 인수 build는 stacked server PR #75 → PR #76 → PR #77이 모두 `main`에 반영된 뒤 실행해요. 그래야 callback order `0`에서 최종 client config를 내려받고 order `100`에서 같은 파일을 검증해요.
 
 현재 환경에는 Unity Editor가 없어서 Editor build 실행은 별도 확인이 필요해요. 순수 C# parser와 runtime 반영 경로는 standalone NUnit harness로 검증해요.

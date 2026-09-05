@@ -12,8 +12,8 @@
 
 | 입력 | 클라이언트 전송 조건 |
 | --- | --- |
-| 일반 공격 | 살아 있고 `AttackCharges > 0`이며, `AttackReadyTick == 0` 또는 `snapshotTick + 1 >= AttackReadyTick`예요. |
-| 스킬 공격 | 살아 있고 `SkillReadyTick == 0` 또는 `snapshotTick + 1 >= SkillReadyTick`예요. |
+| 일반 공격 | 살아 있고 대시 중이 아니며 `AttackCharges > 0`이고, `AttackReadyTick == 0` 또는 `snapshotTick + 1 >= AttackReadyTick`예요. |
+| 스킬 공격 | 살아 있고 대시 중이 아니며 `SkillReadyTick == 0` 또는 `snapshotTick + 1 >= SkillReadyTick`예요. |
 
 `snapshotTick + 1`은 입력이 서버에서 적용될 다음 tick이에요. `long.MaxValue`에서는 overflow가 생기지 않도록 값을 그대로 유지해요. 서버는 입력을 받은 뒤 실제 적용 tick의 탄약과 cooldown을 다시 검증해요.
 
@@ -26,7 +26,7 @@
 - `SkillProgress`는 `SkillReadyTick`과 캐릭터 cooldown을 기준으로 계산해요.
 - `Tick(deltaSeconds)`는 두 진행률을 0~1 사이에서 보간하지만 탄약이나 입력 권한을 만들지 않아요.
 - 같은 tick이나 더 오래된 snapshot은 무시해요.
-- snapshot이 없거나 내 데이터가 없거나 내가 사망했으면 공격을 막아요.
+- snapshot이 없거나 내 데이터가 없거나 내가 사망했거나 `IsDashing=true`이면 공격을 막아요.
 - 새 매치 초기화와 `ClientGameLoop.Clear`에서 상태를 초기화해요.
 
 ## 온라인과 legacy 경계
@@ -41,7 +41,7 @@
 | Colt | 3 | 13초 |
 | Lily | 2 | 11초 |
 
-WebSocket 계약은 `Docs/References/API/asyncapi.yaml`의 AsyncAPI 0.9.0을 따라요. `PressedSkill`, `SkillReadyTick`, `AttackCharges`, `NextAttackChargeTick`, `AttackReadyTick`은 서버가 보내는 `PlayerData` 필드예요.
+WebSocket 계약은 `Docs/References/API/asyncapi.yaml`의 AsyncAPI 0.10.0을 따라요. `PressedSkill`, `SkillReadyTick`, `AttackCharges`, `NextAttackChargeTick`, `AttackReadyTick`, `IsDashing`은 서버가 보내는 `PlayerData` 필드예요. 대시 중 위치 예측 처리와 reset 경계는 `DashStateSync.md`에서 설명해요.
 
 ## 검증 범위
 

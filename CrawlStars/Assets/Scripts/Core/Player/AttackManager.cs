@@ -10,6 +10,7 @@ namespace Core.Player {
         float NormalProgress { get; }
         float SkillProgress { get; }
         bool IsSkillCharged { get; }
+        bool IsDashing { get; }
     }
 
     public class AttackManager : MonoBehaviour, IAttackCooldownSource {
@@ -32,6 +33,8 @@ namespace Core.Player {
         public bool IsSkillCharged => serverAuthoritative
             ? authoritativeCombatState?.IsSkillCharged ?? false
             : cooldownController?.IsSkillCharged ?? false;
+        public bool IsDashing => serverAuthoritative
+            && (authoritativeCombatState?.IsDashing ?? false);
 
         public void Initialize(bool serverAuthoritative = false) {
             this.serverAuthoritative = serverAuthoritative;

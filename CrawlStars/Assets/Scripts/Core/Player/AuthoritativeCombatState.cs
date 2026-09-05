@@ -14,6 +14,7 @@ namespace Core.Player {
         public float NormalProgress { get; private set; }
         public float SkillProgress { get; private set; }
         public bool IsSkillCharged => CanSkillAttack;
+        public bool IsDashing { get; private set; }
         public bool CanNormalAttack { get; private set; }
         public bool CanSkillAttack { get; private set; }
 
@@ -35,11 +36,14 @@ namespace Core.Player {
             }
 
             CurrentCharges = Clamp(player.AttackCharges, 0, MaxCharges);
+            IsDashing = player.IsDashing && !player.IsDead;
             long nextInputTick = snapshotTick == long.MaxValue ? long.MaxValue : snapshotTick + 1;
             CanNormalAttack = !player.IsDead
+                && !IsDashing
                 && CurrentCharges > 0
                 && (player.AttackReadyTick == 0 || nextInputTick >= player.AttackReadyTick);
             CanSkillAttack = !player.IsDead
+                && !IsDashing
                 && (player.SkillReadyTick == 0 || nextInputTick >= player.SkillReadyTick);
 
             NormalProgress = CalculateProgress(
@@ -75,6 +79,7 @@ namespace Core.Player {
             CurrentCharges = 0;
             NormalProgress = 0f;
             SkillProgress = 0f;
+            IsDashing = false;
             CanNormalAttack = false;
             CanSkillAttack = false;
         }

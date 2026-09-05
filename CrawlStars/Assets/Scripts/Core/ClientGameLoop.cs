@@ -124,7 +124,7 @@ namespace Core {
 
         private void HandleInputSubmitted(InputMessageDto input) {
             var listener = PlayerManager.Instance.MyListener;
-            if (!isActive || IsLocalPlayerDead || input == null || listener == null) return;
+            if (!isActive || IsLocalPlayerDead || attackManager.IsDashing || input == null || listener == null) return;
 
             Vector2 moveDirection = input.MoveDir.ToVector2();
             if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
@@ -142,6 +142,11 @@ namespace Core {
 
         private void UpdateLocalPrediction() {
             if (IsLocalPlayerDead) return;
+
+            if (attackManager.IsDashing) {
+                CancelLocalPrediction();
+                return;
+            }
 
             var listener = PlayerManager.Instance.MyListener;
             if (listener == null) return;
@@ -180,6 +185,8 @@ namespace Core {
             if (snapshot.Players == null) {
                 if (snapshot.Tick != 0) {
                     Debug.LogWarning("ClientGameLoop.HandleSnapshot::gameplay snapshot players are null");
+                    attackManager.ObserveSnapshot(snapshot.Tick, null);
+                    CancelLocalPrediction();
                 }
                 return;
             }
@@ -193,7 +200,7 @@ namespace Core {
 
             PlayerManager.Instance.ApplySnapshot(
                 snapshot.Players,
-                !IsLocalPlayerDead && localPredictor.IsActive
+                !IsLocalPlayerDead && !attackManager.IsDashing && localPredictor.IsActive
             );
             BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
@@ -210,11 +217,15 @@ namespace Core {
                     if (!player.IsDead) {
                         localPredictor.ObserveSnapshot(player);
                     }
+                    if (player.IsDead || attackManager.IsDashing) {
+                        CancelLocalPrediction();
+                    }
                     return;
                 }
             }
 
             attackManager.ObserveSnapshot(snapshotTick, null);
+            CancelLocalPrediction();
         }
     }
 }

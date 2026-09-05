@@ -1,4 +1,5 @@
 using Core.Player;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Tests.EditMode.Core {
@@ -107,6 +108,68 @@ namespace Tests.EditMode.Core {
         }
 
         [Test]
+        public void DeadPlayerSnapshot_RemovesStaleDashState() {
+            var state = CreateState();
+
+            state.Observe(10, Player(charges: 3, isDead: true, isDashing: true));
+
+            Assert.That(state.IsDashing, Is.False);
+        }
+
+        [Test]
+        public void DashSnapshot_BlocksBothAttackKindsAndExposesDashState() {
+            var state = CreateState();
+
+            state.Observe(10, Player(charges: 3, isDashing: true));
+
+            Assert.That(state.IsDashing, Is.True);
+            Assert.That(state.CanNormalAttack, Is.False);
+            Assert.That(state.CanSkillAttack, Is.False);
+        }
+
+        [Test]
+        public void NewerNonDashSnapshot_ReenablesAttacksAndIgnoresOlderDashState() {
+            var state = CreateState();
+            state.Observe(10, Player(charges: 3, isDashing: true));
+
+            state.Observe(11, Player(charges: 3, isDashing: false));
+            state.Observe(10, Player(charges: 3, isDashing: true));
+
+            Assert.That(state.IsDashing, Is.False);
+            Assert.That(state.CanNormalAttack, Is.True);
+            Assert.That(state.CanSkillAttack, Is.True);
+        }
+
+        [Test]
+        public void MissingPlayerAndReset_RemoveStaleDashState() {
+            var state = CreateState();
+            state.Observe(10, Player(charges: 3, isDashing: true));
+
+            state.Observe(11, null);
+
+            Assert.That(state.IsDashing, Is.False);
+            Assert.That(state.CanNormalAttack, Is.False);
+            Assert.That(state.CanSkillAttack, Is.False);
+
+            state.Observe(12, Player(charges: 3, isDashing: true));
+            state.Reset();
+
+            Assert.That(state.IsDashing, Is.False);
+            Assert.That(state.CanNormalAttack, Is.False);
+            Assert.That(state.CanSkillAttack, Is.False);
+        }
+
+        [Test]
+        public void JsonRoundTrip_PreservesIsDashingField() {
+            var serialized = JsonConvert.SerializeObject(Player(charges: 3, isDashing: true));
+
+            var restored = JsonConvert.DeserializeObject<PlayerData>(serialized);
+
+            Assert.That(serialized, Does.Contain("\"IsDashing\":true"));
+            Assert.That(restored.IsDashing, Is.True);
+        }
+
+        [Test]
         public void StaleAndDuplicateSnapshots_DoNotReplaceNewerState() {
             var state = CreateState();
             state.Observe(10, Player(charges: 2));
@@ -154,14 +217,16 @@ namespace Tests.EditMode.Core {
             long skillReadyTick = 0,
             long attackReadyTick = 0,
             bool pressedSkill = false,
-            bool isDead = false
+            bool isDead = false,
+            bool isDashing = false
         ) => new PlayerData {
             AttackCharges = charges,
             NextAttackChargeTick = nextChargeTick,
             SkillReadyTick = skillReadyTick,
             AttackReadyTick = attackReadyTick,
             PressedSkill = pressedSkill,
-            IsDead = isDead
+            IsDead = isDead,
+            IsDashing = isDashing
         };
     }
 }
