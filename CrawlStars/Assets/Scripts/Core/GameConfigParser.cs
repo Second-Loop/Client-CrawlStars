@@ -223,7 +223,9 @@ namespace Core {
 
             try {
                 value = token.Value<int>();
-            } catch (Exception exception) when (exception is OverflowException || exception is FormatException) {
+            } catch (Exception exception) when (
+                exception is OverflowException || exception is FormatException || exception is InvalidCastException
+            ) {
                 error = $"{path} must be a 32-bit integer";
                 return false;
             }

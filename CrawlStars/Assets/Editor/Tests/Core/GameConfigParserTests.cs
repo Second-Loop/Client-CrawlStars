@@ -129,6 +129,22 @@ namespace Tests.EditMode.Core {
             AssertRejected(Mutate(root => CharacterAt(root, 2)["maxBullets"] = 2.5), "characters[2].maxBullets");
         }
 
+        [TestCase("version")]
+        [TestCase("normalAttackCoolDown")]
+        [TestCase("characters[1].maxBullets")]
+        public void TryParse_RejectsIntegerOutsideInt32Range(string path) {
+            JToken hugeInteger = JToken.Parse("99999999999999999999999999999999999999999999999999");
+            string json = Mutate(root => {
+                if (path == "characters[1].maxBullets") {
+                    CharacterAt(root, 1)["maxBullets"] = hugeInteger;
+                } else {
+                    root[path] = hugeInteger;
+                }
+            });
+
+            AssertRejected(json, path);
+        }
+
         [TestCase("tileSize")]
         [TestCase("playerRadius")]
         [TestCase("projectileRadius")]
