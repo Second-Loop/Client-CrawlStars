@@ -11,8 +11,12 @@ using UnityEngine;
 namespace Tests.EditMode.Core {
     public class ClientGameLoopDashTests {
         private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        private static readonly FieldInfo NetworkManagerInstanceField =
+            typeof(SingletonMonoBehaviour<NetworkManager>).GetField("instance", BindingFlags.Static | BindingFlags.NonPublic);
 
         private GameObject networkRoot;
+        private NetworkManager networkManager;
+        private NetworkManager previousNetworkManager;
         private GameObject gameLoopRoot;
         private GameObject listenerRoot;
         private ClientGameLoop gameLoop;
@@ -21,8 +25,11 @@ namespace Tests.EditMode.Core {
 
         [SetUp]
         public void SetUp() {
+            previousNetworkManager = (NetworkManager)NetworkManagerInstanceField?.GetValue(null);
             networkRoot = new GameObject("ClientGameLoopDashTests.NetworkManager");
-            networkRoot.AddComponent<NetworkManager>();
+            networkRoot.SetActive(false);
+            networkManager = networkRoot.AddComponent<NetworkManager>();
+            NetworkManagerInstanceField?.SetValue(null, networkManager);
 
             PlayerManager.Instance.playerListeners.Clear();
             PlayerManager.Instance.MyId = "me";
@@ -56,6 +63,9 @@ namespace Tests.EditMode.Core {
             PlayerManager.Instance.MyId = null;
             PlayerManager.Instance.MyTeam = null;
             if (gameLoopRoot != null) UnityEngine.Object.DestroyImmediate(gameLoopRoot);
+            if (ReferenceEquals(NetworkManagerInstanceField?.GetValue(null), networkManager)) {
+                NetworkManagerInstanceField.SetValue(null, previousNetworkManager);
+            }
             if (listenerRoot != null) UnityEngine.Object.DestroyImmediate(listenerRoot);
             if (networkRoot != null) UnityEngine.Object.DestroyImmediate(networkRoot);
         }

@@ -10,7 +10,12 @@ using Utility;
 
 namespace Tests.EditMode.Core {
     public class ClientGameLoopSpectatingTests {
+        private static readonly FieldInfo NetworkManagerInstanceField =
+            typeof(SingletonMonoBehaviour<NetworkManager>).GetField("instance", BindingFlags.Static | BindingFlags.NonPublic);
+
         private GameObject networkRoot;
+        private NetworkManager networkManager;
+        private NetworkManager previousNetworkManager;
         private GameObject cameraRoot;
         private GameObject gameLoopRoot;
         private ClientGameLoop gameLoop;
@@ -18,8 +23,11 @@ namespace Tests.EditMode.Core {
 
         [SetUp]
         public void SetUp() {
+            previousNetworkManager = (NetworkManager)NetworkManagerInstanceField?.GetValue(null);
             networkRoot = new GameObject("ClientGameLoopSpectatingTests.NetworkManager");
-            networkRoot.AddComponent<NetworkManager>();
+            networkRoot.SetActive(false);
+            networkManager = networkRoot.AddComponent<NetworkManager>();
+            NetworkManagerInstanceField?.SetValue(null, networkManager);
 
             cameraRoot = new GameObject("SpectatingTestCamera");
             cameraRoot.tag = "MainCamera";
@@ -44,6 +52,9 @@ namespace Tests.EditMode.Core {
             PlayerManager.Instance.MyId = null;
             PlayerManager.Instance.MyTeam = null;
             if (gameLoopRoot != null) Object.DestroyImmediate(gameLoopRoot);
+            if (ReferenceEquals(NetworkManagerInstanceField?.GetValue(null), networkManager)) {
+                NetworkManagerInstanceField.SetValue(null, previousNetworkManager);
+            }
             if (cameraRoot != null) Object.DestroyImmediate(cameraRoot);
             if (networkRoot != null) Object.DestroyImmediate(networkRoot);
             Cache.OnChangeScene();
