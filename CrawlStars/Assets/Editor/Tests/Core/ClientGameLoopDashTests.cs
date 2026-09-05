@@ -139,17 +139,24 @@ namespace Tests.EditMode.Core {
         }
 
         [Test]
-        public void MissingLocalPlayer_CancelsPredictionAndBlocksCombatState() {
+        public void MissingLocalPlayer_BlocksStalePredictionUntilFreshSelfSnapshot() {
             BeginPrediction();
 
             Invoke(gameLoop, "ObserveLocalPlayerSnapshot", 2L, Array.Empty<PlayerData>());
+            Submit(2, Vector2.left);
 
             Assert.That(Predictor.IsActive, Is.False);
+            Assert.That(Predictor.HasServerState, Is.False);
             Assert.That(attackManager.TryNormalAttack(), Is.False);
+
+            Observe(3, Player(position: new Vector2(3f, 3f)));
+            Submit(3, Vector2.right);
+
+            Assert.That(Predictor.IsActive, Is.True);
         }
 
         [Test]
-        public void PositiveTickNullPlayers_CancelsPredictionAndClearsCombatState() {
+        public void PositiveTickNullPlayers_BlocksStalePredictionUntilFreshSelfSnapshot() {
             BeginPrediction();
 
             Invoke(gameLoop, "HandleSnapshot", new SnapshotDto {
@@ -157,9 +164,16 @@ namespace Tests.EditMode.Core {
                 Tick = 2,
                 Players = null
             });
+            Submit(2, Vector2.left);
 
             Assert.That(Predictor.IsActive, Is.False);
+            Assert.That(Predictor.HasServerState, Is.False);
             Assert.That(attackManager.TryNormalAttack(), Is.False);
+
+            Observe(3, Player(position: new Vector2(3f, 3f)));
+            Submit(3, Vector2.right);
+
+            Assert.That(Predictor.IsActive, Is.True);
         }
 
         [Test]

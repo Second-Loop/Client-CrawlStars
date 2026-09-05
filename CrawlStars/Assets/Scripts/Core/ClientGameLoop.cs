@@ -185,8 +185,7 @@ namespace Core {
             if (snapshot.Players == null) {
                 if (snapshot.Tick != 0) {
                     Debug.LogWarning("ClientGameLoop.HandleSnapshot::gameplay snapshot players are null");
-                    attackManager.ObserveSnapshot(snapshot.Tick, null);
-                    CancelLocalPrediction();
+                    ResetUnavailableLocalPlayerState(snapshot.Tick);
                 }
                 return;
             }
@@ -224,8 +223,12 @@ namespace Core {
                 }
             }
 
+            ResetUnavailableLocalPlayerState(snapshotTick);
+        }
+
+        private void ResetUnavailableLocalPlayerState(long snapshotTick) {
             attackManager.ObserveSnapshot(snapshotTick, null);
-            CancelLocalPrediction();
+            localPredictor.Reset();
         }
     }
 }
