@@ -66,7 +66,7 @@ namespace Core {
             curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
-            attackManager.Initialize();
+            attackManager.Initialize(serverAuthoritative: true);
             isInitialized = true;
         }
 
@@ -92,6 +92,7 @@ namespace Core {
             accumulator = 0;
             previousMoveDirection = Vector2.zero;
             localPredictor.Reset();
+            attackManager.Reset();
             isInitialized = false;
         }
 
@@ -184,11 +185,10 @@ namespace Core {
             }
 
             PlayerManager.Instance.ObserveSnapshot(snapshot.Players);
+            ObserveLocalPlayerSnapshot(snapshot.Tick, snapshot.Players);
             if (IsLocalPlayerDead) {
                 CancelLocalPrediction();
                 SetActiveInput(false);
-            } else {
-                ObserveLocalPlayerSnapshot(snapshot.Players);
             }
 
             PlayerManager.Instance.ApplySnapshot(
@@ -203,13 +203,18 @@ namespace Core {
             }
         }
 
-        private void ObserveLocalPlayerSnapshot(IReadOnlyList<PlayerData> players) {
+        private void ObserveLocalPlayerSnapshot(long snapshotTick, IReadOnlyList<PlayerData> players) {
             foreach (var player in players) {
                 if (player != null && player.Id == PlayerManager.Instance.MyId) {
-                    localPredictor.ObserveSnapshot(player);
+                    attackManager.ObserveSnapshot(snapshotTick, player);
+                    if (!player.IsDead) {
+                        localPredictor.ObserveSnapshot(player);
+                    }
                     return;
                 }
             }
+
+            attackManager.ObserveSnapshot(snapshotTick, null);
         }
     }
 }
