@@ -15,6 +15,9 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     private bool isEnding;
 
     public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
+    public bool IsLocalPlayerDead => clientGameLoop.IsLocalPlayerDead;
+    public bool IsSpectating => clientGameLoop.IsSpectating;
+    public string ViewTargetPlayerId => clientGameLoop.ViewTargetPlayerId;
 
     public void Initialize(ReadyEventMessageDto readyEvent) {
         if (readyEvent?.Map == null) {

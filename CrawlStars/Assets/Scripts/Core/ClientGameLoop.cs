@@ -17,6 +17,9 @@ namespace Core {
 
         // 데이이터에만 접근 가능하도록 한정적으로 열어둠
         public IAttackCooldownSource AttackCooldownSource => attackManager;
+        public bool IsLocalPlayerDead => PlayerManager.Instance.IsLocalPlayerDead;
+        public bool IsSpectating => PlayerManager.Instance.IsSpectating;
+        public string ViewTargetPlayerId => PlayerManager.Instance.ViewTargetPlayerId;
 
         public Action<Vector2, bool> OnDetectInput;
 
@@ -42,7 +45,7 @@ namespace Core {
         }
 
         private void Update() {
-            if (!isActive) return;
+            if (!isActive || IsLocalPlayerDead) return;
 
             accumulator += Time.deltaTime;
             SendInputAsync().Forget();
@@ -81,7 +84,7 @@ namespace Core {
         }
 
         public void SetActiveInput(bool isActive) {
-            inputProvider.IsActivated = isActive;
+            inputProvider.IsActivated = isActive && !IsLocalPlayerDead;
         }
         
         public void Clear() {
@@ -93,6 +96,8 @@ namespace Core {
         }
 
         private async UniTask SendInputAsync() {
+            if (IsLocalPlayerDead) return;
+
             Vector2 moveDirection = inputProvider.GetMoveDirection();
             Vector2 attackDirection = inputProvider.CaptureAttackDirection();
 
@@ -118,7 +123,7 @@ namespace Core {
 
         private void HandleInputSubmitted(InputMessageDto input) {
             var listener = PlayerManager.Instance.MyListener;
-            if (!isActive || input == null || listener == null) return;
+            if (!isActive || IsLocalPlayerDead || input == null || listener == null) return;
 
             Vector2 moveDirection = input.MoveDir.ToVector2();
             if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
@@ -135,6 +140,8 @@ namespace Core {
         }
 
         private void UpdateLocalPrediction() {
+            if (IsLocalPlayerDead) return;
+
             var listener = PlayerManager.Instance.MyListener;
             if (listener == null) return;
 
@@ -176,8 +183,18 @@ namespace Core {
                 return;
             }
 
-            ObserveLocalPlayerSnapshot(snapshot.Players);
-            PlayerManager.Instance.ApplySnapshot(snapshot.Players, localPredictor.IsActive);
+            PlayerManager.Instance.ObserveSnapshot(snapshot.Players);
+            if (IsLocalPlayerDead) {
+                CancelLocalPrediction();
+                SetActiveInput(false);
+            } else {
+                ObserveLocalPlayerSnapshot(snapshot.Players);
+            }
+
+            PlayerManager.Instance.ApplySnapshot(
+                snapshot.Players,
+                !IsLocalPlayerDead && localPredictor.IsActive
+            );
             BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
 

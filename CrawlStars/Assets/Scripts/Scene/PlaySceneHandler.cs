@@ -15,6 +15,10 @@ namespace Scene {
         [SerializeField] private GameObject waitingCurtain;
         [SerializeField] private TextMeshProUGUI infoText;
 
+        private bool hasGameStarted;
+        private bool? lastLocalPlayerDead;
+        private string lastViewTargetPlayerId;
+
         protected override void Start() {
             base.Start();
             GameManager.Instance.RegisterOnDetectInput(aimRenderer.OnPressKey);
@@ -36,6 +40,8 @@ namespace Scene {
                 benchMarker.gameObject.SetActive(isActive);
                 infoText.text = $"Press 'B' to {(isActive ? "hide" : "show")} benchmarker";
             }
+
+            RefreshSpectatorUI();
             base.Update();
         }
 
@@ -71,8 +77,29 @@ namespace Scene {
 
             if (snapshot.Status != "started") return;
 
-            cooldownView.gameObject.SetActive(true);
+            hasGameStarted = true;
+            RefreshSpectatorUI(true);
             NetworkManager.Instance.SnapshotReceived -= HandleUIBeforeStart;
+        }
+
+        private void RefreshSpectatorUI(bool force = false) {
+            bool isLocalPlayerDead = GameManager.Instance.IsLocalPlayerDead;
+            string viewTargetPlayerId = GameManager.Instance.ViewTargetPlayerId;
+            bool stateChanged = lastLocalPlayerDead != isLocalPlayerDead
+                || lastViewTargetPlayerId != viewTargetPlayerId;
+            if (!force && !stateChanged && !isLocalPlayerDead) return;
+
+            lastLocalPlayerDead = isLocalPlayerDead;
+            lastViewTargetPlayerId = viewTargetPlayerId;
+
+            aimRenderer.gameObject.SetActive(!isLocalPlayerDead);
+            cooldownView.gameObject.SetActive(hasGameStarted && !isLocalPlayerDead);
+
+            if (isLocalPlayerDead) {
+                infoText.text = GameManager.Instance.IsSpectating
+                    ? "Spectating teammate"
+                    : "Waiting for team result";
+            }
         }
     }
 }
