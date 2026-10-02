@@ -22,15 +22,17 @@ namespace Network {
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
         public bool IsMatched { get; private set; }
+        private bool isInitializing;
 
         public event Action<SnapshotDto> SnapshotReceived;
         public event Action<GameEndMessageDto> GameEndReceived;
         public event Action<InputMessageDto> InputSubmitted;
+        public event Action SocketDisconnected;
 
         protected override void Awake() {
             base.Awake();
-            initializationTask = InitializeAsync().Preserve();
-            initializationTask.Forget();
+
+            Initialize();
         }
 
         private void OnApplicationQuit() {
@@ -38,12 +40,27 @@ namespace Network {
             socketClient = null;
         }
 
+        public void Initialize() {
+            if (IsInitialized || isInitializing) return;
+
+            // Preserve는 여러 곳에서 기다리게 하기 위함
+            initializationTask = InitializeAsync().Preserve();
+            initializationTask.Forget();
+        }
+
         private async UniTask InitializeAsync() {
-            config = await NetworkConfig.LoadAsync();
-            if (config != null) {
-                RestClient = new RestApiClient(config.RestBaseUrl);
+            try {
+                isInitializing = true;
+
+                config = await NetworkConfig.LoadAsync();
+                if (config != null) {
+                    RestClient = new RestApiClient(config.RestBaseUrl);
+                }
+
+                IsInitialized = RestClient != null;
+            } finally {
+                isInitializing = false;
             }
-            IsInitialized = RestClient != null;
         }
 
         public void SetJwtToken(string accessToken) {
@@ -56,14 +73,14 @@ namespace Network {
             RestClient.SetJwtToken(accessToken);
         }
 
-        private async UniTask ConnectSocketAsync(string path, CancellationToken ct) {
+        private async UniTask ConnectSocketAsync(string path, CancellationToken cts) {
             if (!IsInitialized || string.IsNullOrEmpty(path)) {
                 Debug.LogError("NetworkManager.ConnectSocketAsync::not initialized or invalid parameter");
                 return;
             }
 
             await DisconnectSocketAsync();
-            ct.ThrowIfCancellationRequested();
+            cts.ThrowIfCancellationRequested();
 
             socketClient = new WebSocketClient(config.GetWebSocketUrl(path));
             RegisterSocketLogEvents(socketClient);
@@ -75,6 +92,8 @@ namespace Network {
 
             // 복사해서 사용하기 때문에 연달아서 Connect 해도 충돌 없음
             var targetClient = socketClient;
+            IsMatched = false;
+            matchedReadyEvent = null;
             socketClient = null;
             return targetClient.DisconnectAsync();
         }
@@ -114,6 +133,7 @@ namespace Network {
         public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
             await initializationTask;
             ct.ThrowIfCancellationRequested();
+
             if (!IsInitialized) {
                 throw new InvalidOperationException("NetworkManager initialization failed.");
             }
@@ -124,7 +144,7 @@ namespace Network {
                 GameMode = GetSelectedGameMode(),
                 CharacterType = (int)CharacterManager.Instance.MyCharacterType
             };
-            MatchDto dto = await RestClient.PostAsync<MatchmakingJoinRequestDto, MatchDto>("matchmaking/join", request);
+            MatchDto dto = await RestClient.PostAsync<MatchmakingJoinRequestDto, MatchDto>("matchmaking/join", request, ct);
             ValidateMatchmakingResponse(dto, request);
 
             Debug.Log($"Room Id: {dto.Room.Id}, GameMode: {dto.GameMode}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
@@ -148,9 +168,14 @@ namespace Network {
             socketClient.MessageReceived += HandleSocketMessage;
             socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
             socketClient.Closed += closeCode => {
+                Debug.Log($"WebSocket Closed: {closeCode}");
+                bool isUnexpectedDisconnect = socketClient == this.socketClient;
+                if (!isUnexpectedDisconnect) return;
+
                 IsMatched = false;
                 matchedReadyEvent = null;
-                Debug.Log($"WebSocket Closed: {closeCode}");
+                this.socketClient = null;
+                SocketDisconnected?.Invoke();
             };
         }
 

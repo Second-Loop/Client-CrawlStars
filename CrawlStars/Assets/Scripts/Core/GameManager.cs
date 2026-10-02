@@ -27,6 +27,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         BushVisibilityController.Instance.Initialize();
 
         NetworkManager.Instance.GameEndReceived += HandleGameEnd;
+        NetworkManager.Instance.SocketDisconnected += HandleSocketDisconnected;
     }
 
     public void OnEnterPlayScene() {
@@ -44,6 +45,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         ProjectileManager.Instance.ClearListener();
 
         NetworkManager.Instance.GameEndReceived -= HandleGameEnd;
+        NetworkManager.Instance.SocketDisconnected -= HandleSocketDisconnected;
         NetworkManager.Instance.DisconnectSocketAsync().Forget();
     }
 
@@ -64,6 +66,15 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         if (message == null || message.PlayerId != PlayerManager.Instance.MyId) return;
 
         EndGameAsync(message.Result).Forget();
+    }
+
+    private void HandleSocketDisconnected() {
+        HandleSocketDisconnectedInternal().Forget();
+    }
+
+    private async UniTask HandleSocketDisconnectedInternal() {
+        await UniTask.WaitUntil(() => !SceneController.Instance.IsChanging);
+        await EndGameAsync("The connection to the server was lost");
     }
 
     public void SetActiveInput(bool isActive) => clientGameLoop.SetActiveInput(isActive);

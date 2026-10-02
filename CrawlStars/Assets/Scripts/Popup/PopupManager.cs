@@ -70,9 +70,10 @@ namespace Popup {
         }
 
         private void RemovePopup(PopupHandler target, int listIdx, PopupHandler.Result result = null) {
+            popupList.RemoveAt(listIdx);
+            target.gameObject.SetActive(false);
             target.Dispose(result);
             Object.Destroy(target.gameObject);
-            popupList.RemoveAt(listIdx);
         }
     }
 }
