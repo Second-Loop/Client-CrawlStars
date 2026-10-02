@@ -26,6 +26,7 @@ namespace Network {
         public event Action<SnapshotDto> SnapshotReceived;
         public event Action<GameEndMessageDto> GameEndReceived;
         public event Action<InputMessageDto> InputSubmitted;
+        public event Action SocketDisconnected;
 
         protected override void Awake() {
             base.Awake();
@@ -83,6 +84,8 @@ namespace Network {
 
             // 복사해서 사용하기 때문에 연달아서 Connect 해도 충돌 없음
             var targetClient = socketClient;
+            IsMatched = false;
+            matchedReadyEvent = null;
             socketClient = null;
             return targetClient.DisconnectAsync();
         }
@@ -160,9 +163,14 @@ namespace Network {
             socketClient.MessageReceived += HandleSocketMessage;
             socketClient.ErrorReceived += error => Debug.LogError($"WebSocket Error: {error}");
             socketClient.Closed += closeCode => {
+                Debug.Log($"WebSocket Closed: {closeCode}");
+                bool isUnexpectedDisconnect = socketClient == this.socketClient;
+                if (!isUnexpectedDisconnect) return;
+
                 IsMatched = false;
                 matchedReadyEvent = null;
-                Debug.Log($"WebSocket Closed: {closeCode}");
+                this.socketClient = null;
+                SocketDisconnected?.Invoke();
             };
         }
 
