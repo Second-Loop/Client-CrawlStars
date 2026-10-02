@@ -22,6 +22,7 @@ namespace Network {
         public RestApiClient RestClient { get; private set; }
         public bool IsInitialized { get; private set; }
         public bool IsMatched { get; private set; }
+        private bool isInitializing;
 
         public event Action<SnapshotDto> SnapshotReceived;
         public event Action<GameEndMessageDto> GameEndReceived;
@@ -40,18 +41,26 @@ namespace Network {
         }
 
         public void Initialize() {
-            if (IsInitialized) return;
+            if (IsInitialized || isInitializing) return;
 
+            // Preserve는 여러 곳에서 기다리게 하기 위함
             initializationTask = InitializeAsync().Preserve();
             initializationTask.Forget();
         }
 
         private async UniTask InitializeAsync() {
-            config = await NetworkConfig.LoadAsync();
-            if (config != null) {
-                RestClient = new RestApiClient(config.RestBaseUrl);
+            try {
+                isInitializing = true;
+
+                config = await NetworkConfig.LoadAsync();
+                if (config != null) {
+                    RestClient = new RestApiClient(config.RestBaseUrl);
+                }
+
+                IsInitialized = RestClient != null;
+            } finally {
+                isInitializing = false;
             }
-            IsInitialized = RestClient != null;
         }
 
         public void SetJwtToken(string accessToken) {
@@ -124,6 +133,7 @@ namespace Network {
         public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
             await initializationTask;
             ct.ThrowIfCancellationRequested();
+
             if (!IsInitialized) {
                 throw new InvalidOperationException("NetworkManager initialization failed.");
             }
