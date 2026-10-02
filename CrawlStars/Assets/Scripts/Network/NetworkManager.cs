@@ -63,14 +63,15 @@ namespace Network {
             RestClient.SetJwtToken(accessToken);
         }
 
-        private async UniTask ConnectSocketAsync(string path, CancellationToken ct) {
+        private async UniTask ConnectSocketAsync(string path, CancellationToken playerCts, CancellationToken timeoutCts) {
             if (!IsInitialized || string.IsNullOrEmpty(path)) {
                 Debug.LogError("NetworkManager.ConnectSocketAsync::not initialized or invalid parameter");
                 return;
             }
 
             await DisconnectSocketAsync();
-            ct.ThrowIfCancellationRequested();
+            playerCts.ThrowIfCancellationRequested();
+            timeoutCts.ThrowIfCancellationRequested();
 
             socketClient = new WebSocketClient(config.GetWebSocketUrl(path));
             RegisterSocketLogEvents(socketClient);
@@ -118,9 +119,10 @@ namespace Network {
             return SendSocketJsonAsync(input);
         }
 
-        public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
+        public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken playerCts, CancellationToken timeoutCts) {
             await initializationTask;
-            ct.ThrowIfCancellationRequested();
+            playerCts.ThrowIfCancellationRequested();
+            timeoutCts.ThrowIfCancellationRequested();
             if (!IsInitialized) {
                 throw new InvalidOperationException("NetworkManager initialization failed.");
             }
@@ -139,14 +141,17 @@ namespace Network {
             PlayerManager.Instance.MyId = dto.Player.Id;
             PlayerManager.Instance.MyTeam = dto.Player.Team;
             nextClientTick = 1;
-            ct.ThrowIfCancellationRequested();
+            playerCts.ThrowIfCancellationRequested();
+            timeoutCts.ThrowIfCancellationRequested();
 
             // 방 입장
-            await ConnectSocketAsync(dto.WebSocketPath, ct);
-            ct.ThrowIfCancellationRequested();
+            await ConnectSocketAsync(dto.WebSocketPath, playerCts, timeoutCts);
+            playerCts.ThrowIfCancellationRequested();
+            timeoutCts.ThrowIfCancellationRequested();
 
             // 다른 유저 기다리기
-            await UniTask.WaitUntil(() => IsMatched, cancellationToken: ct);
+            // 내 연결은 정상적으로 됐으니 timeout은 이제 적용하지 않음
+            await UniTask.WaitUntil(() => IsMatched, cancellationToken: playerCts);
             return matchedReadyEvent;
         }
 

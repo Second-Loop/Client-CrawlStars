@@ -12,7 +12,9 @@ namespace Popup {
     public class MatchingPopup : PopupHandler {
         [SerializeField] Transform loadingIndicator;
 
-        private CancellationTokenSource cts;
+        private CancellationTokenSource playerCts;
+        private CancellationTokenSource timeoutCts;
+        private const int TimeoutMilliseconds = 10000;
 
         public override void SetData(Param param, int sortingOrder) {
             base.SetData(param, sortingOrder);
@@ -34,28 +36,29 @@ namespace Popup {
                 NetworkManager.Instance.Initialize();
             }
 
-            cts = new CancellationTokenSource();
-            StartMatching(cts.Token).Forget();
+            playerCts = new CancellationTokenSource();
+            timeoutCts = new CancellationTokenSource(TimeoutMilliseconds);
+            StartMatching().Forget();
         }
 
-        private async UniTask StartMatching(CancellationToken ct) {
+        private async UniTask StartMatching() {
             loadingIndicator.DORotate(new Vector3(0, 0, -360f), 1f, RotateMode.FastBeyond360)
                 .SetEase(Ease.Linear)
                 .SetLoops(-1, LoopType.Restart);
 
             ReadyEventMessageDto response = null;
             try {
-                response = await NetworkManager.Instance.MatchAsync(ct);
+                response = await NetworkManager.Instance.MatchAsync(playerCts.Token, timeoutCts.Token);
             } catch (Exception ex) {
                 await NetworkManager.Instance.DisconnectSocketAsync();
 
                 PlayerManager.Instance.MyId = null;
                 PlayerManager.Instance.MyTeam = null;
 
-                if (ex is not OperationCanceledException) {
+                if (timeoutCts.Token.IsCancellationRequested || ex is not OperationCanceledException) {
                     RequestPopupClosing();
                     Debug.LogError(ex);
-                    var param = new OneButtonPopup.Param("Network Error", "Please try again later.");
+                    var param = new OneButtonPopup.Param("Network Error", $"Please try again later.\n({ex.Message})");
                     PopupManager.Instance.ShowAsync("TwoButtonPopup", param).Forget();
                 }
                 return;
@@ -71,9 +74,13 @@ namespace Popup {
         public override void Dispose(Result result = null) {
             base.Dispose(result);
 
-            cts?.Cancel();
-            cts?.Dispose();
-            cts = null;
+            playerCts?.Cancel();
+            playerCts?.Dispose();
+            playerCts = null;
+            
+            timeoutCts?.Cancel();
+            timeoutCts?.Dispose();
+            timeoutCts = null;
             
             loadingIndicator.DOKill();
         }
