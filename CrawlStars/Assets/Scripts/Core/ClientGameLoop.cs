@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CameraControl;
 using Core.Inputs;
 using Core.Map;
+using Core.Mode;
 using Core.Player;
 using Core.Prediction;
 using Core.Projectile;
@@ -204,7 +205,9 @@ namespace Core {
                     accumulator = 0f;
                     previousMoveDirection = Vector2.zero;
 
-                    onDead?.Invoke();
+                    if (ModeManager.Instance.CurGameMode == ModeManager.GameMode.Team) {
+                        onDead?.Invoke();
+                    }
                     onDetectInput?.Invoke(Vector2.zero, false);
                     
                     SpectateManager.Instance.SpectateMyTeammate(snapshot.Players);
