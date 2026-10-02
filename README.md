@@ -33,11 +33,11 @@
 <br/>
 <br/>
 
-## 📦 빌드 다운로드 링크 (1.0.0-beta2)
+## 📦 빌드 다운로드 링크 (1.0.0)
 
-- [[Windows](https://drive.google.com/file/d/1q9JwMjrpYBpcsL2LoUgqRNFU1aqYbsMl/view?usp=sharing)]
-- [[MacOS](https://drive.google.com/file/d/1qwz4qqAThpYu0MF8l9U-ReaU2mt3y_8_/view?usp=sharing)]
-  - '파일이 손상되었기 때문에 열 수 없습니다.' 혹은 'Gatekeeper 보안 기능' 등으로 앱 실행이 되지 않을 때 다음 명령어 실행 `xattr -dr com.apple.quarantine /path/to/YourGame.app`
+- [[Windows](https://drive.google.com/file/d/1POMgiwelAqAWwxgRWfmsYuUUAEzKU5Ww/view?usp=sharing)]
+- [[MacOS](https://drive.google.com/file/d/1Q6yxrp_xhWf48DM4JfPV5Rz5udlz7YT3/view?usp=sharing)]
+  - '파일이 손상되었기 때문에 열 수 없습니다.' 혹은 'Gatekeeper 보안 기능' 등으로 앱 실행이 되지 않을 때 다음 명령어 실행 `xattr -dr com.apple.quarantine ~/Downloads/CrawlStars_v1.0.0_Mac/CrawlStars.app`
 
 <br/>
 <br/>
