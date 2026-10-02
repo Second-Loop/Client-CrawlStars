@@ -9,16 +9,26 @@ namespace Core.Inputs {
 
         public Vector2 AimDirection { get; private set; }
         private Vector2 attackDirection;
-        public bool IsActivated { get; set; }
-        public bool UsedSkill { get; private set; }
+
+        private bool isActivated;
         private AimButton currentAimButton = AimButton.None;
 
-        private void Update() {
-            if (!IsActivated) {
+        public bool IsActivated {
+            get => isActivated;
+            set {
+                isActivated = value;
+                if (value) return;
+
+                currentAimButton = AimButton.None;
+                UsedSkill = false;
                 AimDirection = Vector2.zero;
                 attackDirection = Vector2.zero;
-                return;
             }
+        }
+        public bool UsedSkill { get; private set; }
+
+        private void Update() {
+            if (!IsActivated) return;
 
             // 조준 시작
             if (currentAimButton == AimButton.None) {

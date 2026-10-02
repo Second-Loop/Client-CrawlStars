@@ -18,9 +18,6 @@ public class StatusBar : MonoBehaviour {
     private const string MySideBg = "progress_blue";
     private const string OtherSideBg = "progress_red";
 
-    // 임시
-    public float Value => barImage.fillAmount;
-
     public void Initialize(int maxValue) {
         this.maxValue = maxValue;
         barBg.fillAmount = 1f;

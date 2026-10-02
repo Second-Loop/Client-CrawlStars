@@ -23,9 +23,6 @@ namespace Core.Player {
         private static readonly Color32 MyAuraColor = new Color32(23, 212, 29, 150);
         private static readonly Color32 MySideAuraColor = new Color32(0, 198, 255, 150);
         private static readonly Color32 OtherSideAuraColor = new Color32(255, 0, 0, 150);
-        
-        // 임시
-        public float Hp => hpBar.Value;
 
         public void Initialize(ReadyPlayerDto playerData, bool isMe) {
             isStatusInitialized = false;

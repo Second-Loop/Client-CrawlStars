@@ -10,8 +10,7 @@ namespace Core.Player {
         private static PlayerManager instance;
         public static PlayerManager Instance => instance ??= new PlayerManager();
 
-        // 임시 public
-        public readonly Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
+        private readonly Dictionary<string, PlayerListener> playerListeners = new Dictionary<string, PlayerListener>();
 
         public PlayerListener MyListener { get; private set; }
         public string MyId { get; set; }
@@ -34,6 +33,10 @@ namespace Core.Player {
                 listener.gameObject.SetActive(true);
                 playerListeners.Add(player.Id, listener);
 
+                if (player.Team == MyTeam) {
+                    SpectateManager.Instance.MyTeammateIds.Add(player.Id);
+                }
+
                 if (isMe) {
                     MyListener = listener;
                 }
@@ -53,6 +56,10 @@ namespace Core.Player {
                 }
 
                 if (player.IsDead) {
+                    if (player.Id == MyId) {
+                        MyListener = null;
+                    }
+
                     ObjectPooling.Instance.TryAbandon(Constants.Player, listener.gameObject);
                     playerListeners.Remove(player.Id);
                     continue;
@@ -73,15 +80,6 @@ namespace Core.Player {
                 
                 listener.BeingHit(player.Hp);
             }
-        }
-
-        public void FocusCamera() {
-            if (MyListener == null) {
-                Debug.LogError("PlayerManager.FocusCamera::Cannot find my listener object");
-                return;
-            }
-
-            Cache.CameraController.TargetPlayer = MyListener.transform;
         }
 
         public void ClearListeners() {

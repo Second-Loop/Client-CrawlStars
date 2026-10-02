@@ -57,8 +57,12 @@ namespace Core.Simulator {
         }
 
         private (Vector2 moveDirection, Vector2 attackDirection) Update(AttackManager attackManager) {
-            var curPlayers = PlayerManager.Instance.playerListeners;
-            var curProjectiles = ProjectileManager.Instance.projectileListeners;
+            // 레거시 코드 컴파일 에러 대응
+            // var curPlayers = PlayerManager.Instance.playerListeners;
+            // var curProjectiles = ProjectileManager.Instance.projectileListeners;
+            var curPlayers = new Dictionary<string, PlayerListener>();
+            var curProjectiles = new Dictionary<string, ProjectileListener>();
+
             var curMe = PlayerManager.Instance.MyListener;
 
             if (curMe == null) {
@@ -189,7 +193,9 @@ namespace Core.Simulator {
         }
 
         private bool ShouldRetreat(PlayerListener curMe) {
-            return curMe.Hp > 0f && curMe.Hp <= RetreatHpThreshold;
+            // 레거시 코드 컴파일 에러 대응
+            // return curMe.Hp > 0f && curMe.Hp <= RetreatHpThreshold;
+            return false;
         }
 
         private bool CanAttack() {

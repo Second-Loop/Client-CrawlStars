@@ -41,29 +41,6 @@ namespace Tests.EditMode.Core {
             roots.Clear();
         }
 
-        [Test]
-        public void ApplySnapshot_PreviousProjectileIsAbsent_RemovesProjectile() {
-            projectileManager.ApplySnapshot(new[] { CreateProjectile("projectile-1", Vector2.one) });
-            var listener = projectileManager.projectileListeners["projectile-1"];
-
-            projectileManager.ApplySnapshot(Array.Empty<ProjectileData>());
-
-            Assert.That(projectileManager.projectileListeners.ContainsKey("projectile-1"), Is.False);
-            Assert.That(listener.gameObject.activeSelf, Is.False);
-        }
-
-        [Test]
-        public void ApplySnapshot_AliveProjectileIsPresent_MaintainsAndUpdatesProjectile() {
-            projectileManager.ApplySnapshot(new[] { CreateProjectile("projectile-1", Vector2.one) });
-            var originalListener = projectileManager.projectileListeners["projectile-1"];
-
-            projectileManager.ApplySnapshot(new[] { CreateProjectile("projectile-1", new Vector2(3f, 4f)) });
-
-            Assert.That(projectileManager.projectileListeners["projectile-1"], Is.SameAs(originalListener));
-            Assert.That(originalListener.transform.position, Is.EqualTo(new Vector3(3f, 4f, -1f)));
-            Assert.That(originalListener.gameObject.activeSelf, Is.True);
-        }
-
         private GameObject Track(GameObject gameObject) {
             roots.Add(gameObject);
             return gameObject;

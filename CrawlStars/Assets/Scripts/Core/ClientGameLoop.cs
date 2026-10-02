@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CameraControl;
 using Core.Inputs;
 using Core.Map;
 using Core.Player;
@@ -18,7 +19,10 @@ namespace Core {
         // 데이이터에만 접근 가능하도록 한정적으로 열어둠
         public IAttackCooldownSource AttackCooldownSource => attackManager;
 
-        public Action<Vector2, bool> OnDetectInput;
+        public Action<Vector2, bool> onDetectInput;
+        public Action onDead;
+        
+        public bool AmIDead { get; private set; }
 
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
         private readonly LocalMovementPredictor localPredictor = new LocalMovementPredictor();
@@ -42,13 +46,13 @@ namespace Core {
         }
 
         private void Update() {
-            if (!isActive) return;
+            if (!isActive || AmIDead) return;
 
             accumulator += Time.deltaTime;
             SendInputAsync().Forget();
             UpdateLocalPrediction();
 
-            OnDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
+            onDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
         }
 
         public void Initialize(IReadOnlyList<ReadyPlayerDto> players) {
@@ -60,6 +64,7 @@ namespace Core {
             }
 
             localPredictor.Reset();
+            AmIDead = false;
             curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
@@ -81,7 +86,7 @@ namespace Core {
         }
 
         public void SetActiveInput(bool isActive) {
-            inputProvider.IsActivated = isActive;
+            inputProvider.IsActivated = isActive && !AmIDead;
         }
         
         public void Clear() {
@@ -90,9 +95,12 @@ namespace Core {
             previousMoveDirection = Vector2.zero;
             localPredictor.Reset();
             isInitialized = false;
+            AmIDead = false;
         }
 
         private async UniTask SendInputAsync() {
+            if (!isActive || AmIDead) return;
+
             Vector2 moveDirection = inputProvider.GetMoveDirection();
             Vector2 attackDirection = inputProvider.CaptureAttackDirection();
 
@@ -118,7 +126,7 @@ namespace Core {
 
         private void HandleInputSubmitted(InputMessageDto input) {
             var listener = PlayerManager.Instance.MyListener;
-            if (!isActive || input == null || listener == null) return;
+            if (!isActive || AmIDead || input == null || listener == null) return;
 
             Vector2 moveDirection = input.MoveDir.ToVector2();
             if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
@@ -135,6 +143,8 @@ namespace Core {
         }
 
         private void UpdateLocalPrediction() {
+            if (AmIDead) return;
+
             var listener = PlayerManager.Instance.MyListener;
             if (listener == null) return;
 
@@ -176,22 +186,37 @@ namespace Core {
                 return;
             }
 
-            ObserveLocalPlayerSnapshot(snapshot.Players);
+            PlayerData myData = null;
+            foreach (var player in snapshot.Players) {
+                if (player != null && player.Id == PlayerManager.Instance.MyId) {
+                    myData = player;
+                    break;
+                }
+            }
+
+            if (myData != null && !AmIDead) {
+                localPredictor.ObserveSnapshot(myData);
+
+                if (myData.IsDead) {
+                    AmIDead = true;
+                    SetActiveInput(false);
+                    localPredictor.Cancel();
+                    accumulator = 0f;
+                    previousMoveDirection = Vector2.zero;
+
+                    onDead?.Invoke();
+                    onDetectInput?.Invoke(Vector2.zero, false);
+                    
+                    SpectateManager.Instance.SpectateMyTeammate(snapshot.Players);
+                }
+            }
+
             PlayerManager.Instance.ApplySnapshot(snapshot.Players, localPredictor.IsActive);
             BushVisibilityController.Instance.SetVisibility(snapshot.Players);
             ProjectileManager.Instance.ApplySnapshot(snapshot.Projectiles ?? Array.Empty<ProjectileData>());
 
             if (!isActive) {
                 SetActive(true);
-            }
-        }
-
-        private void ObserveLocalPlayerSnapshot(IReadOnlyList<PlayerData> players) {
-            foreach (var player in players) {
-                if (player != null && player.Id == PlayerManager.Instance.MyId) {
-                    localPredictor.ObserveSnapshot(player);
-                    return;
-                }
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Core.Player;
 using UnityEngine;
+using Cache = Utility.Cache;
 
 namespace Core.Map {
     public class BushVisibilityController {
@@ -60,8 +61,9 @@ namespace Core.Map {
         }
 
         public void SetVisibility(IReadOnlyList<PlayerData> players) {
-            var myPos = MapHelper.GetMapIdx(PlayerManager.Instance.MyListener.transform.position);
-            bool amIInBush = bushNumbers.TryGetValue(myPos, out var myBushNum);
+            var target = Cache.CameraController.TargetPlayer;
+            int myBushNum = -1;
+            bool amIInBush = target != null && bushNumbers.TryGetValue(MapHelper.GetMapIdx(target.transform.position), out myBushNum);
 
             foreach (var player in players) {
                 if (player.Id == PlayerManager.Instance.MyId) continue;
