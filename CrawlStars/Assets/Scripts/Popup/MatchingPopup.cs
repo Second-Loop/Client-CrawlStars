@@ -64,7 +64,7 @@ namespace Popup {
                     RequestPopupClosing();
                     Debug.LogError(ex);
                     var param = new OneButtonPopup.Param("Network Error", $"Please try again later.\n({ex.Message})");
-                    PopupManager.Instance.ShowAsync("TwoButtonPopup", param).Forget();
+                    PopupManager.Instance.ShowAsync("OneButtonPopup", param).Forget();
                 }
                 return;
             }

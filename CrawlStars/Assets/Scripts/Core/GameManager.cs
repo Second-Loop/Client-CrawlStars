@@ -69,7 +69,12 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     }
 
     private void HandleSocketDisconnected() {
-        EndGameAsync("The connection to the server was lost").Forget();
+        HandleSocketDisconnectedInternal().Forget();
+    }
+
+    private async UniTask HandleSocketDisconnectedInternal() {
+        await UniTask.WaitUntil(() => !SceneController.Instance.IsChanging);
+        await EndGameAsync("The connection to the server was lost");
     }
 
     public void SetActiveInput(bool isActive) => clientGameLoop.SetActiveInput(isActive);
