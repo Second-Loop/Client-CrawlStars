@@ -7,8 +7,7 @@ namespace Core.Projectile {
         private static ProjectileManager instance;
         public static ProjectileManager Instance => instance ??= new ProjectileManager();
 
-        // 임시 public
-        public readonly Dictionary<string, ProjectileListener> projectileListeners = new Dictionary<string, ProjectileListener>();
+        private readonly Dictionary<string, ProjectileListener> projectileListeners = new Dictionary<string, ProjectileListener>();
 
         public void Initialize() {
             ClearListener();
