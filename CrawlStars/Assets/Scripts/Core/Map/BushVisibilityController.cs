@@ -60,8 +60,9 @@ namespace Core.Map {
         }
 
         public void SetVisibility(IReadOnlyList<PlayerData> players) {
-            var myPos = MapHelper.GetMapIdx(PlayerManager.Instance.MyListener.transform.position);
-            bool amIInBush = bushNumbers.TryGetValue(myPos, out var myBushNum);
+            var myListener = PlayerManager.Instance.MyListener;
+            int myBushNum = -1;
+            bool amIInBush = myListener != null && bushNumbers.TryGetValue(MapHelper.GetMapIdx(myListener.transform.position), out myBushNum);
 
             foreach (var player in players) {
                 if (player.Id == PlayerManager.Instance.MyId) continue;

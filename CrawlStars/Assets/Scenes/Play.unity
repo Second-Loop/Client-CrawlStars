@@ -1045,7 +1045,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Press 'B' to hide benchmarker
+  m_text: Press 'B' to show benchmarker
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: de99c18cb6100824191154cceca256fe, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 011fbc5019bf742438d73349b833d546, type: 2}
