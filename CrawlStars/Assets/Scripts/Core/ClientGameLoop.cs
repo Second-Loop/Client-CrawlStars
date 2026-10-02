@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CameraControl;
 using Core.Inputs;
 using Core.Map;
 using Core.Player;
@@ -18,7 +19,10 @@ namespace Core {
         // 데이이터에만 접근 가능하도록 한정적으로 열어둠
         public IAttackCooldownSource AttackCooldownSource => attackManager;
 
-        public Action<Vector2, bool> OnDetectInput;
+        public Action<Vector2, bool> onDetectInput;
+        public Action onDead;
+        
+        public bool AmIDead { get; private set; }
 
         private IReadOnlyList<ReadyPlayerDto> curPlayers;
         private readonly LocalMovementPredictor localPredictor = new LocalMovementPredictor();
@@ -27,7 +31,6 @@ namespace Core {
         private Vector2 previousMoveDirection;
         private bool isActive;
         private bool isInitialized;
-        private bool amIDead;
 
         private const int InputRate = 30;
         private const float InputInterval = 1f / InputRate;
@@ -43,13 +46,13 @@ namespace Core {
         }
 
         private void Update() {
-            if (!isActive || amIDead) return;
+            if (!isActive || AmIDead) return;
 
             accumulator += Time.deltaTime;
             SendInputAsync().Forget();
             UpdateLocalPrediction();
 
-            OnDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
+            onDetectInput?.Invoke(inputProvider.AimDirection, inputProvider.UsedSkill);
         }
 
         public void Initialize(IReadOnlyList<ReadyPlayerDto> players) {
@@ -61,7 +64,7 @@ namespace Core {
             }
 
             localPredictor.Reset();
-            amIDead = false;
+            AmIDead = false;
             curPlayers = players;
             PlayerManager.Instance.Initialize(players);
             ProjectileManager.Instance.Initialize();
@@ -83,7 +86,7 @@ namespace Core {
         }
 
         public void SetActiveInput(bool isActive) {
-            inputProvider.IsActivated = isActive && !amIDead;
+            inputProvider.IsActivated = isActive && !AmIDead;
         }
         
         public void Clear() {
@@ -92,11 +95,11 @@ namespace Core {
             previousMoveDirection = Vector2.zero;
             localPredictor.Reset();
             isInitialized = false;
-            amIDead = false;
+            AmIDead = false;
         }
 
         private async UniTask SendInputAsync() {
-            if (!isActive || amIDead) return;
+            if (!isActive || AmIDead) return;
 
             Vector2 moveDirection = inputProvider.GetMoveDirection();
             Vector2 attackDirection = inputProvider.CaptureAttackDirection();
@@ -123,7 +126,7 @@ namespace Core {
 
         private void HandleInputSubmitted(InputMessageDto input) {
             var listener = PlayerManager.Instance.MyListener;
-            if (!isActive || amIDead || input == null || listener == null) return;
+            if (!isActive || AmIDead || input == null || listener == null) return;
 
             Vector2 moveDirection = input.MoveDir.ToVector2();
             if (!localPredictor.HandleInput(input.ClientTick, moveDirection, listener.transform.position)) return;
@@ -140,7 +143,7 @@ namespace Core {
         }
 
         private void UpdateLocalPrediction() {
-            if (amIDead) return;
+            if (AmIDead) return;
 
             var listener = PlayerManager.Instance.MyListener;
             if (listener == null) return;
@@ -191,16 +194,20 @@ namespace Core {
                 }
             }
 
-            if (myData != null && !amIDead) {
+            if (myData != null && !AmIDead) {
                 localPredictor.ObserveSnapshot(myData);
 
                 if (myData.IsDead) {
-                    amIDead = true;
+                    AmIDead = true;
                     SetActiveInput(false);
                     localPredictor.Cancel();
                     accumulator = 0f;
                     previousMoveDirection = Vector2.zero;
-                    OnDetectInput?.Invoke(Vector2.zero, false);
+
+                    onDead?.Invoke();
+                    onDetectInput?.Invoke(Vector2.zero, false);
+                    
+                    SpectateManager.Instance.SpectateMyTeammate(snapshot.Players);
                 }
             }
 

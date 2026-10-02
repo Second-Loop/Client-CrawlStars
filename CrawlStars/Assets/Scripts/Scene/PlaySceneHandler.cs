@@ -14,10 +14,12 @@ namespace Scene {
         [SerializeField] private CooldownView cooldownView;
         [SerializeField] private GameObject waitingCurtain;
         [SerializeField] private TextMeshProUGUI infoText;
+        [SerializeField] private GameObject SpectateInfo;
 
         protected override void Start() {
             base.Start();
             GameManager.Instance.RegisterOnDetectInput(aimRenderer.OnPressKey);
+            GameManager.Instance.RegisterOnDead(SetActiveSpectateInfo);
 
             NetworkManager.Instance.InputSubmitted += benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived += benchMarker.OnReceiveSnapshot;
@@ -28,6 +30,7 @@ namespace Scene {
 
             waitingCurtain.SetActive(true);
             cooldownView.gameObject.SetActive(false);
+            SpectateInfo.SetActive(false);
         }
 
         protected override void Update() {
@@ -41,6 +44,7 @@ namespace Scene {
 
         private void OnDestroy() {
             GameManager.Instance.UnregisterOnDetectInput(aimRenderer.OnPressKey);
+            GameManager.Instance.UnregisterOnDead(SetActiveSpectateInfo);
 
             NetworkManager.Instance.InputSubmitted -= benchMarker.OnInputSubmitted;
             NetworkManager.Instance.SnapshotReceived -= benchMarker.OnReceiveSnapshot;
@@ -73,6 +77,11 @@ namespace Scene {
 
             cooldownView.gameObject.SetActive(true);
             NetworkManager.Instance.SnapshotReceived -= HandleUIBeforeStart;
+        }
+
+        private void SetActiveSpectateInfo() {
+            SpectateInfo.SetActive(true);
+            cooldownView.gameObject.SetActive(false);
         }
     }
 }

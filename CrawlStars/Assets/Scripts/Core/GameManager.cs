@@ -1,4 +1,5 @@
 using System;
+using CameraControl;
 using Core;
 using Core.Map;
 using Core.Player;
@@ -16,6 +17,8 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
 
     public IAttackCooldownSource AttackCooldownSource => clientGameLoop.AttackCooldownSource;
 
+    public bool AmIDead => clientGameLoop.AmIDead;
+
     public void Initialize(ReadyEventMessageDto readyEvent) {
         if (readyEvent?.Map == null) {
             throw new ArgumentException("Ready event map is missing.", nameof(readyEvent));
@@ -23,6 +26,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
 
         MapHelper.CachedMapData = readyEvent.Map;
         mapRenderer.Render(MapHelper.CachedMapData);
+        SpectateManager.Instance.Initialize();
         clientGameLoop.Initialize(readyEvent.Players);
         BushVisibilityController.Instance.Initialize();
 
@@ -31,7 +35,7 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     }
 
     public void OnEnterPlayScene() {
-        PlayerManager.Instance.FocusCamera();
+        SpectateManager.Instance.FocusCameraToMe();
         NetworkManager.Instance.SendReadyAckAsync().Forget();
     }
 
@@ -48,9 +52,6 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
         NetworkManager.Instance.SocketDisconnected -= HandleSocketDisconnected;
         NetworkManager.Instance.DisconnectSocketAsync().Forget();
     }
-
-    public void RegisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.OnDetectInput += callback;
-    public void UnregisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.OnDetectInput -= callback;
 
     private async UniTask EndGameAsync(string result) {
         if (isEnding) return;
@@ -78,4 +79,10 @@ public class GameManager : SingletonMonoBehaviour<GameManager> {
     }
 
     public void SetActiveInput(bool isActive) => clientGameLoop.SetActiveInput(isActive);
+
+    public void RegisterOnDead(Action callback) => clientGameLoop.onDead += callback;
+    public void UnregisterOnDead(Action callback) => clientGameLoop.onDead -= callback;
+
+    public void RegisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.onDetectInput += callback;
+    public void UnregisterOnDetectInput(Action<Vector2, bool> callback) => clientGameLoop.onDetectInput -= callback;
 }
