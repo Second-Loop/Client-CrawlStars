@@ -64,15 +64,14 @@ namespace Network {
             RestClient.SetJwtToken(accessToken);
         }
 
-        private async UniTask ConnectSocketAsync(string path, CancellationToken playerCts, CancellationToken timeoutCts) {
+        private async UniTask ConnectSocketAsync(string path, CancellationToken cts) {
             if (!IsInitialized || string.IsNullOrEmpty(path)) {
                 Debug.LogError("NetworkManager.ConnectSocketAsync::not initialized or invalid parameter");
                 return;
             }
 
             await DisconnectSocketAsync();
-            playerCts.ThrowIfCancellationRequested();
-            timeoutCts.ThrowIfCancellationRequested();
+            cts.ThrowIfCancellationRequested();
 
             socketClient = new WebSocketClient(config.GetWebSocketUrl(path));
             RegisterSocketLogEvents(socketClient);
@@ -122,10 +121,9 @@ namespace Network {
             return SendSocketJsonAsync(input);
         }
 
-        public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken playerCts, CancellationToken timeoutCts) {
+        public async UniTask<ReadyEventMessageDto> MatchAsync(CancellationToken ct) {
             await initializationTask;
-            playerCts.ThrowIfCancellationRequested();
-            timeoutCts.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested();
             if (!IsInitialized) {
                 throw new InvalidOperationException("NetworkManager initialization failed.");
             }
@@ -136,7 +134,7 @@ namespace Network {
                 GameMode = GetSelectedGameMode(),
                 CharacterType = (int)CharacterManager.Instance.MyCharacterType
             };
-            MatchDto dto = await RestClient.PostAsync<MatchmakingJoinRequestDto, MatchDto>("matchmaking/join", request);
+            MatchDto dto = await RestClient.PostAsync<MatchmakingJoinRequestDto, MatchDto>("matchmaking/join", request, ct);
             ValidateMatchmakingResponse(dto, request);
 
             Debug.Log($"Room Id: {dto.Room.Id}, GameMode: {dto.GameMode}, MaxPlayers: {dto.Room.MaxPlayers}\n" +
@@ -144,17 +142,14 @@ namespace Network {
             PlayerManager.Instance.MyId = dto.Player.Id;
             PlayerManager.Instance.MyTeam = dto.Player.Team;
             nextClientTick = 1;
-            playerCts.ThrowIfCancellationRequested();
-            timeoutCts.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested();
 
             // 방 입장
-            await ConnectSocketAsync(dto.WebSocketPath, playerCts, timeoutCts);
-            playerCts.ThrowIfCancellationRequested();
-            timeoutCts.ThrowIfCancellationRequested();
+            await ConnectSocketAsync(dto.WebSocketPath, ct);
+            ct.ThrowIfCancellationRequested();
 
             // 다른 유저 기다리기
-            // 내 연결은 정상적으로 됐으니 timeout은 이제 적용하지 않음
-            await UniTask.WaitUntil(() => IsMatched, cancellationToken: playerCts);
+            await UniTask.WaitUntil(() => IsMatched, cancellationToken: ct);
             return matchedReadyEvent;
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -18,29 +19,29 @@ namespace Network {
             jwtAccessToken = accessToken;
         }
 
-        public UniTask<TResponse> GetAsync<TResponse>(string path) 
-            => SendAsync<object, TResponse>("GET", path, null);
+        public UniTask<TResponse> GetAsync<TResponse>(string path, CancellationToken cancellationToken = default) 
+            => SendAsync<object, TResponse>("GET", path, null, cancellationToken);
 
-        public UniTask<TResponse> PostAsync<TRequest, TResponse>(string path, TRequest body)
-            => SendAsync<TRequest, TResponse>("POST", path, body);
+        public UniTask<TResponse> PostAsync<TRequest, TResponse>(string path, TRequest body, CancellationToken cancellationToken = default)
+            => SendAsync<TRequest, TResponse>("POST", path, body, cancellationToken);
 
-        public UniTask<TResponse> PutAsync<TRequest, TResponse>(string path, TRequest body) 
-            => SendAsync<TRequest, TResponse>("PUT", path, body);
+        public UniTask<TResponse> PutAsync<TRequest, TResponse>(string path, TRequest body, CancellationToken cancellationToken = default) 
+            => SendAsync<TRequest, TResponse>("PUT", path, body, cancellationToken);
 
-        public UniTask<TResponse> PatchAsync<TRequest, TResponse>(string path, TRequest body)
-            => SendAsync<TRequest, TResponse>("PATCH", path, body);
+        public UniTask<TResponse> PatchAsync<TRequest, TResponse>(string path, TRequest body, CancellationToken cancellationToken = default)
+            => SendAsync<TRequest, TResponse>("PATCH", path, body, cancellationToken);
 
-        public async UniTask DeleteAsync(string path) => await SendRawAsync("DELETE", path, null);
+        public async UniTask DeleteAsync(string path, CancellationToken cancellationToken = default) => await SendRawAsync("DELETE", path, null, cancellationToken);
 
-        private async UniTask<TResponse> SendAsync<TRequest, TResponse>(string method, string path, TRequest body) {
+        private async UniTask<TResponse> SendAsync<TRequest, TResponse>(string method, string path, TRequest body, CancellationToken cancellationToken = default) {
             string jsonBody = body == null ? null : JsonConvert.SerializeObject(body);
-            string responseJson = await SendRawAsync(method, path, jsonBody);
+            string responseJson = await SendRawAsync(method, path, jsonBody, cancellationToken);
 
             if (string.IsNullOrWhiteSpace(responseJson)) return default;
             return JsonConvert.DeserializeObject<TResponse>(responseJson);
         }
 
-        private async UniTask<string> SendRawAsync(string method, string path, string jsonBody) {
+        private async UniTask<string> SendRawAsync(string method, string path, string jsonBody, CancellationToken cancellationToken = default) {
             // path에 '/'가 중복으로 들어가는 것을 방지
             string url = $"{baseUrl}/{path.TrimStart('/')}";
 
@@ -65,7 +66,7 @@ namespace Network {
                 request.SetRequestHeader("Content-Type", "application/json");
             }
 
-            await request.SendWebRequest();
+            await request.SendWebRequest().WithCancellation(cancellationToken);
 
             string responseBody = request.downloadHandler?.text;
             if (request.result != UnityWebRequest.Result.Success) {

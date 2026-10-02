@@ -14,7 +14,7 @@ namespace Popup {
 
         private CancellationTokenSource playerCts;
         private CancellationTokenSource timeoutCts;
-        private const int TimeoutMilliseconds = 10000;
+        private const int TimeoutMilliseconds = 12000;
 
         public override void SetData(Param param, int sortingOrder) {
             base.SetData(param, sortingOrder);
@@ -46,16 +46,21 @@ namespace Popup {
                 .SetEase(Ease.Linear)
                 .SetLoops(-1, LoopType.Restart);
 
+            // cts가 null이 될 수 있으므로 값 복사
+            var playerCt = playerCts.Token;
+            var timeoutCt = timeoutCts.Token;
+
             ReadyEventMessageDto response = null;
             try {
-                response = await NetworkManager.Instance.MatchAsync(playerCts.Token, timeoutCts.Token);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(playerCt, timeoutCt);
+                response = await NetworkManager.Instance.MatchAsync(linkedCts.Token);
             } catch (Exception ex) {
                 await NetworkManager.Instance.DisconnectSocketAsync();
 
                 PlayerManager.Instance.MyId = null;
                 PlayerManager.Instance.MyTeam = null;
 
-                if (timeoutCts.Token.IsCancellationRequested || ex is not OperationCanceledException) {
+                if (timeoutCt.IsCancellationRequested || ex is not OperationCanceledException) {
                     RequestPopupClosing();
                     Debug.LogError(ex);
                     var param = new OneButtonPopup.Param("Network Error", $"Please try again later.\n({ex.Message})");
@@ -77,8 +82,8 @@ namespace Popup {
             playerCts?.Cancel();
             playerCts?.Dispose();
             playerCts = null;
-            
-            timeoutCts?.Cancel();
+
+            // 유저가 취소한 상황이라 Cancel 하지 않음
             timeoutCts?.Dispose();
             timeoutCts = null;
             
