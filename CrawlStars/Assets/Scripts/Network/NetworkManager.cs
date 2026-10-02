@@ -29,13 +29,20 @@ namespace Network {
 
         protected override void Awake() {
             base.Awake();
-            initializationTask = InitializeAsync().Preserve();
-            initializationTask.Forget();
+
+            Initialize();
         }
 
         private void OnApplicationQuit() {
             socketClient?.Abort();
             socketClient = null;
+        }
+
+        public void Initialize() {
+            if (IsInitialized) return;
+
+            initializationTask = InitializeAsync().Preserve();
+            initializationTask.Forget();
         }
 
         private async UniTask InitializeAsync() {

@@ -17,6 +17,23 @@ namespace Popup {
         public override void SetData(Param param, int sortingOrder) {
             base.SetData(param, sortingOrder);
 
+            SetDataAsync().Forget();
+        }
+
+        private async UniTask SetDataAsync() {
+            while (Application.internetReachability == NetworkReachability.NotReachable) {
+                var param = new TwoButtonPopup.Param("Check out", "Please check your internet connection then click the OK button.");
+                var res = (TwoButtonPopup.Result)await PopupManager.Instance.ShowAsync("TwoButtonPopup", param);
+                if (!res.isClickedOk) {
+                    RequestPopupClosing();
+                    return;
+                }
+            }
+
+            if (!NetworkManager.Instance.IsInitialized) {
+                NetworkManager.Instance.Initialize();
+            }
+
             cts = new CancellationTokenSource();
             StartMatching(cts.Token).Forget();
         }
@@ -38,6 +55,8 @@ namespace Popup {
                 if (ex is not OperationCanceledException) {
                     RequestPopupClosing();
                     Debug.LogError(ex);
+                    var param = new OneButtonPopup.Param("Network Error", "Please try again later.");
+                    PopupManager.Instance.ShowAsync("TwoButtonPopup", param).Forget();
                 }
                 return;
             }
