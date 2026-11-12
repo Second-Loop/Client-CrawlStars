@@ -52,6 +52,16 @@
 
 조작 반응성이 중요한 내 플레이어의 이동 위치만 최대 0.12초 동안 예측하며, 공격 승인과 피해·사망 등 전투 결과는 항상 서버 판정을 적용.
 
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Network/NetworkManager.cs](CrawlStars/Assets/Scripts/Network/NetworkManager.cs) — 입력 명령 전송과 서버 메시지 분기
+- [CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs](CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs) — 스냅샷 적용 순서와 예측 처리 조율
+- [CrawlStars/Assets/Scripts/Core/Player/PlayerManager.cs](CrawlStars/Assets/Scripts/Core/Player/PlayerManager.cs) — 플레이어 위치·공격·HP·사망 반영
+- [CrawlStars/Assets/Scripts/Core/Projectile/ProjectileManager.cs](CrawlStars/Assets/Scripts/Core/Projectile/ProjectileManager.cs) — 투사체 생성·갱신·회수
+
+</details>
+
 <br/>
 
 ### 2. 이동 예측과 서버 보정
@@ -68,6 +78,15 @@
 프레임별 예측 이동량은 `direction × serverSpeed × progress² × deltaTime`으로 계산. 예측 초반 이동량을 낮게 시작해 서버 위치로 되돌아갈 때 발생하는 시각적 오차를 제한.
 
 현재 구현은 스냅샷 버퍼 기반 보간이 아니라 로컬 예측과 서버 보정(reconciliation) 구조. 원격 플레이어 위치는 수신한 스냅샷을 즉시 적용.
+
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Core/Prediction/LocalMovementPredictor.cs](CrawlStars/Assets/Scripts/Core/Prediction/LocalMovementPredictor.cs) — 방향 전환 예측, 서버 이동량 반영과 ACK 기반 보정
+- [CrawlStars/Assets/Scripts/Core/Prediction/GamePhysics.cs](CrawlStars/Assets/Scripts/Core/Prediction/GamePhysics.cs) — 예측 이동의 맵 경계·타일 충돌 검사
+- [CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs](CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs) — 입력 제출·스냅샷 수신과 예측 연결
+
+</details>
 
 <br/>
 <br/>
@@ -112,6 +131,16 @@
 
 서버로 전송하는 각 입력 데이터에는 `ClientTick`을 부여하고 서버 스냅샷의 `LastProcessedClientTick`으로 해당 입력 데이터 처리 여부를 확인.
 
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Core/Inputs/InputProvider.cs](CrawlStars/Assets/Scripts/Core/Inputs/InputProvider.cs) — 공격 방향 저장·단일 소비와 입력 수집 순서
+- [CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs](CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs) — 30Hz 기본 전송과 방향 변경·공격 시 즉시 전송
+- [CrawlStars/Assets/Scripts/Network/NetworkManager.cs](CrawlStars/Assets/Scripts/Network/NetworkManager.cs) — ClientTick 부여와 입력 제출 이벤트
+- [CrawlStars/Assets/Scripts/Network/DTO/Dto.cs](CrawlStars/Assets/Scripts/Network/DTO/Dto.cs) — 입력 명령과 스냅샷 DTO 정의
+
+</details>
+
 <br/>
 
 ### 2. 서버 권위 상태를 일관성 있게 화면에 반영하는 구조와 책임 분리
@@ -123,6 +152,16 @@
 플레이어와 투사체는 서버에서 부여하는 ID를 키로 관리하며 최신 스냅샷을 기준으로 생성·갱신·회수. 파괴 스냅샷을 놓친 투사체도 최신 ID 리스트에서 사라지면 회수해 이벤트 누락 여부와 관계없이 서버 권위 상태에 맞춤.
 
 부쉬 타일은 맵 초기화 시 연결된 영역을 BFS로 그룹핑해 두고, 스냅샷 위치를 기준으로 내 플레이어와 같은 부쉬 그룹에 있는 상대만 표시해 시야 판정.
+
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs](CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs) — 예측·플레이어·시야·투사체 적용 순서 조율
+- [CrawlStars/Assets/Scripts/Core/Player/PlayerManager.cs](CrawlStars/Assets/Scripts/Core/Player/PlayerManager.cs) — 로컬 이동 표현 보존과 서버 전투 상태 적용
+- [CrawlStars/Assets/Scripts/Core/Projectile/ProjectileManager.cs](CrawlStars/Assets/Scripts/Core/Projectile/ProjectileManager.cs) — ID 기반 투사체 관리와 스냅샷에서 사라진 투사체 회수
+- [CrawlStars/Assets/Scripts/Core/Map/BushVisibilityController.cs](CrawlStars/Assets/Scripts/Core/Map/BushVisibilityController.cs) — BFS 부쉬 그룹 전처리와 시야 표시
+
+</details>
 
 <br/>
 
@@ -136,6 +175,17 @@
 
 플레이 중 연결이 끊기면 씬 전환 완료 후 종료 안내와 메인씬 복귀 처리. 게임 종료나 중도 이탈 시 `GameManager.Dispose`에서 맵, 플레이어, 투사체, 예측 상태, 이벤트 구독과 소켓을 한 흐름으로 정리.
 
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Scene/SceneController.cs](CrawlStars/Assets/Scripts/Scene/SceneController.cs) — Additive 로딩, 씬 전환 전후 콜백과 이전 씬 해제
+- [CrawlStars/Assets/Scripts/Core/GameManager.cs](CrawlStars/Assets/Scripts/Core/GameManager.cs) — 게임 초기화·Ready ACK·종료와 세션 정리
+- [CrawlStars/Assets/Scripts/Popup/MatchingPopup.cs](CrawlStars/Assets/Scripts/Popup/MatchingPopup.cs) — 사용자 취소·타임아웃 토큰 연결과 정리
+- [CrawlStars/Assets/Scripts/Network/NetworkManager.cs](CrawlStars/Assets/Scripts/Network/NetworkManager.cs) — 연결별 소켓 관리와 이전 연결의 종료 이벤트 구분
+- [CrawlStars/Assets/Scripts/Network/WebSocketClient.cs](CrawlStars/Assets/Scripts/Network/WebSocketClient.cs) — 소켓 종료 타임아웃, 이벤트 해제와 연결 정리
+
+</details>
+
 <br/>
 
 ### 4. 서버·클라이언트 공유 데이터와 Unity 전용 데이터를 구분한 데이터 설계
@@ -148,6 +198,17 @@
 
 REST와 WebSocket 메시지 형식은 [OpenAPI](CrawlStars/Docs/References/API/openapi.yaml)와 [AsyncAPI](CrawlStars/Docs/References/API/asyncapi.yaml)로 관리. Unity 빌드 전처리 과정에서 서버 저장소의 최신 게임 설정과 API 문서를 가져와 코드, 설정과 서버 계약이 함께 변경되도록 구성.
 
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Core/GameConfig.cs](CrawlStars/Assets/Scripts/Core/GameConfig.cs) — 공유 게임 설정 로드
+- [CrawlStars/Assets/Scripts/Core/Character/CharacterInfo.cs](CrawlStars/Assets/Scripts/Core/Character/CharacterInfo.cs) — 공유 수치와 Unity 표현 데이터 결합
+- [CrawlStars/Assets/Scripts/Core/Character/CharacterInfoSo.cs](CrawlStars/Assets/Scripts/Core/Character/CharacterInfoSo.cs) — 캐릭터 설명·아이콘 등 Unity 전용 데이터 정의
+- [CrawlStars/Assets/Scripts/Core/Character/CharacterManager.cs](CrawlStars/Assets/Scripts/Core/Character/CharacterManager.cs) — Addressables 데이터 로드와 캐릭터 선택 관리
+- [CrawlStars/Assets/Editor/FileSynchronizer.cs](CrawlStars/Assets/Editor/FileSynchronizer.cs) — 빌드 전 게임 설정과 API 명세 동기화
+
+</details>
+
 <br/>
 
 ### 5. 비동기 결과를 반환하는 팝업 관리 구조
@@ -157,6 +218,17 @@ REST와 WebSocket 메시지 형식은 [OpenAPI](CrawlStars/Docs/References/API/o
 `PopupManager`는 팝업 프리팹의 생성, 열린 팝업 목록과 Canvas 정렬 순서를 중앙에서 관리. 새 팝업을 열 때마다 정렬 값을 높여 항상 마지막 팝업이 위에 표시되도록 하고, 최상단·이름·인스턴스 기준 닫기와 전체 닫기 동작을 한곳에서 처리.
 
 ESC 입력은 현재 열린 최상단 팝업의 `CanCloseWithEsc`를 확인한 뒤 닫도록 연결. 매칭처럼 자체 비동기 작업을 가진 팝업은 `Dispose`에서 취소 토큰과 애니메이션을 함께 정리해 UI 종료와 내부 작업의 수명주기가 분리되지 않도록 설계.
+
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Popup/PopupHandler.cs](CrawlStars/Assets/Scripts/Popup/PopupHandler.cs) — Param·Result 계약과 비동기 결과 완료
+- [CrawlStars/Assets/Scripts/Popup/PopupManager.cs](CrawlStars/Assets/Scripts/Popup/PopupManager.cs) — 팝업 생성·목록·정렬·닫기 관리
+- [CrawlStars/Assets/Scripts/Popup/TwoButtonPopup.cs](CrawlStars/Assets/Scripts/Popup/TwoButtonPopup.cs) — 사용자 선택을 Result로 반환하는 구현
+- [CrawlStars/Assets/Scripts/Scene/BaseSceneHandler.cs](CrawlStars/Assets/Scripts/Scene/BaseSceneHandler.cs) — 최상단 팝업의 ESC 닫기 정책 적용
+- [CrawlStars/Assets/Scripts/Popup/MatchingPopup.cs](CrawlStars/Assets/Scripts/Popup/MatchingPopup.cs) — 팝업 종료 시 매칭 취소와 애니메이션 정리
+
+</details>
 
 <br/>
 <br/>
@@ -189,6 +261,15 @@ DNS Only에서는 Cloudflare 프록시의 보호 기능을 일부 사용할 수 
 
 `BenchMarker`를 통해 변경 전후의 레이턴시를 같은 기준으로 비교하면서 Cloudflare 설정이 병목이라는 사실과 개선 효과를 수치로 확인. 이후에도 측정 가능한 구간을 세분화하는 방식을 이어가 Unity Profiler로 스냅샷 역직렬화와 GC Alloc 비용을 분리했고, 다음 단계의 JSON 처리 최적화로 연결.
 
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/UI/BenchMarker.cs](CrawlStars/Assets/Scripts/UI/BenchMarker.cs) — 입력·ACK 이벤트 연결과 지연·타임아웃 UI 표시
+- [CrawlStars/Assets/Scripts/UI/InputAckTracker.cs](CrawlStars/Assets/Scripts/UI/InputAckTracker.cs) — 입력 tick 추적, 정확한 ACK 지연 측정과 만료 처리
+- [CrawlStars/Assets/Editor/Tests/UI/InputAckTrackerTests.cs](CrawlStars/Assets/Editor/Tests/UI/InputAckTrackerTests.cs) — ACK 건너뛰기·정확한 tick 측정·타임아웃 테스트
+
+</details>
+
 </details>
 
 <details>
@@ -215,6 +296,14 @@ DNS Only에서는 Cloudflare 프록시의 보호 기능을 일부 사용할 수 
 <img width="648" height="97" alt="최종capture" src="https://github.com/user-attachments/assets/fae4de09-f169-4583-b639-3714f105a31a" />
 
 최종 측정에서는 전체 처리 시간이 `0.25ms`, GC 할당이 `6.3KB`까지 감소. 최초 상태와 비교하면 처리 시간은 약 `78%`, GC 할당은 약 `81%` 줄었고, 30Hz 기준 초당 할당량도 약 `1MB → 189KB`로 감소.
+
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Network/NetworkManager.cs](CrawlStars/Assets/Scripts/Network/NetworkManager.cs) — 통합 DTO로 메시지를 한 번만 역직렬화한 뒤 타입별 분기
+- [CrawlStars/Assets/Scripts/Network/DTO/Dto.cs](CrawlStars/Assets/Scripts/Network/DTO/Dto.cs) — SocketMessageDto와 값 타입 Vector2Dto 정의
+
+</details>
 
 
 </details>
@@ -262,6 +351,15 @@ if (!IsActive) {
 ```
 
 수정 후 ACK 시점의 보정 거리는 대부분 `0.0032~0.0352` 수준으로 감소. 가속 로직을 제거하지 않고도 큰 위치 보정과 연속 방향 전환 중의 위치 역행을 해소.
+
+<details>
+<summary><strong><ins>관련 소스</ins></strong></summary>
+
+- [CrawlStars/Assets/Scripts/Core/Prediction/LocalMovementPredictor.cs](CrawlStars/Assets/Scripts/Core/Prediction/LocalMovementPredictor.cs) — 서버 위치 변화량 누적과 연속 방향 전환 시 예측 위치 유지
+- [CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs](CrawlStars/Assets/Scripts/Core/ClientGameLoop.cs) — 입력 제출·서버 스냅샷과 예측 처리 연결
+- [CrawlStars/Assets/Scripts/Core/Player/PlayerManager.cs](CrawlStars/Assets/Scripts/Core/Player/PlayerManager.cs) — 예측 중 로컬 플레이어의 이동 표현 보존
+
+</details>
 
 </details>
 
